@@ -1,10 +1,10 @@
 [package]
-name = "colony-sim"
+name = "grid-game"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.14", features = ["dynamic_linking"] }
+bevy = { version = "0.14", features = ["wayland","dynamic_linking"] }
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
