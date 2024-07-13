@@ -1,4 +1,7 @@
-use bevy::{gizmos::gizmos, prelude::*};
+mod height_grid;
+
+use bevy::prelude::*;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -9,7 +12,6 @@ fn main() {
 
 fn setup(
     mut commands: Commands,
-    mut gizmos: Gizmos,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
