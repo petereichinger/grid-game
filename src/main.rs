@@ -1,13 +1,15 @@
-use bevy::prelude::*;
+use bevy::{gizmos::gizmos, prelude::*};
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, setup)
+        .add_systems(Update, draw_gizmos)
         .run();
 }
 
 fn setup(
     mut commands: Commands,
+    mut gizmos: Gizmos,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
@@ -30,5 +32,19 @@ fn setup(
     commands.spawn(Camera3dBundle {
         transform: Transform::from_xyz(0.0, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
+    });
+}
+const RED: Color = Color::linear_rgb(1.0, 0.0, 0.0);
+
+fn draw_gizmos(mut gizmos: Gizmos) {
+    (0..10).for_each(|x| {
+        (0..10).for_each(|y| {
+            gizmos.sphere(
+                Vec3::new(x as f32, 0.0, y as f32),
+                Quat::IDENTITY,
+                0.05,
+                RED,
+            );
+        })
     });
 }
