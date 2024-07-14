@@ -91,6 +91,8 @@ impl MeshBuilder for HeightGrid {
 
         for y in 0..self.cells_count.1 {
             for x in 0..self.cells_count.0 {
+                let array_offset = (self.cells_count.0 * y + x) * 4;
+                dbg!(array_offset);
                 let cell = (x, y);
                 let p0 = self.get_position(cell, Corner::TopLeft);
                 let p1 = self.get_position(cell, Corner::TopRight);
@@ -112,18 +114,18 @@ impl MeshBuilder for HeightGrid {
                 uvs.push([0.0, 1.0]);
                 uvs.push([1.0, 1.0]);
 
-                let i0 = self.get_index(cell, Corner::TopLeft);
-                let i1 = self.get_index(cell, Corner::TopRight);
-                let i2 = self.get_index(cell, Corner::BottomLeft);
-                let i3 = self.get_index(cell, Corner::BottomRight);
+                let i0 = array_offset;
+                let i1 = array_offset + 1;
+                let i2 = array_offset + 2;
+                let i3 = array_offset + 3;
 
                 indices.push(i0 as u32);
-                indices.push(i3 as u32);
                 indices.push(i1 as u32);
+                indices.push(i3 as u32);
 
                 indices.push(i0 as u32);
-                indices.push(i2 as u32);
                 indices.push(i3 as u32);
+                indices.push(i2 as u32);
             }
         }
 

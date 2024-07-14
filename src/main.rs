@@ -28,7 +28,8 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mesh = HeightGrid::new((2, 2), vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    let mesh = HeightGrid::new((2, 2), vec![0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+    // let mesh = HeightGrid::new((1, 1), vec![0, 0, 0, 0]);
     commands.spawn(PbrBundle {
         mesh: meshes.add(mesh),
         material: materials.add(Color::WHITE),
@@ -46,7 +47,7 @@ fn setup(
     });
     // camera
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 0.0, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(0.0, -4.0, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 }
@@ -56,7 +57,7 @@ fn draw_gizmos(mut gizmos: Gizmos) {
     (0..10).for_each(|x| {
         (0..10).for_each(|y| {
             gizmos.sphere(
-                Vec3::new(x as f32, 0.0, y as f32),
+                Vec3::new(x as f32, y as f32, 0.0),
                 Quat::IDENTITY,
                 0.05,
                 RED,
