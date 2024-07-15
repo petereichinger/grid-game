@@ -1,11 +1,30 @@
 mod height_grid;
 
-use bevy::{input::keyboard::KeyboardInput, prelude::*, window::ClosingWindow};
+use bevy::{
+    color::palettes::css::LIME,
+    pbr::wireframe::{Wireframe, WireframeColor, WireframePlugin},
+    prelude::*,
+    render::{
+        settings::{RenderCreation, WgpuFeatures, WgpuSettings},
+        RenderPlugin,
+    },
+    window::ClosingWindow,
+};
 use height_grid::HeightGrid;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins((
+            DefaultPlugins.set(RenderPlugin {
+                render_creation: RenderCreation::Automatic(WgpuSettings {
+                    // WARN this is a native only feature. It will not work with webgl or webgpu
+                    features: WgpuFeatures::POLYGON_MODE_LINE,
+                    ..default()
+                }),
+                ..default()
+            }),
+            WireframePlugin,
+        ))
         .add_systems(Startup, setup)
         .add_systems(Update, draw_gizmos)
         .add_systems(Update, close_on_esc)
@@ -31,18 +50,22 @@ fn setup(
     let mesh = HeightGrid::new(
         (2, 2),
         vec![
-            (0, 0, 0, 0).into(),
+            (0, 1, 0, 1).into(),
             (1, 1, 1, 1).into(),
-            (0, 0, 0, 0).into(),
-            (0, 0, 0, 0).into(),
+            (0, 0, 0, 1).into(),
+            (0, 0, 1, 1).into(),
         ],
     );
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(mesh),
-        material: materials.add(Color::WHITE),
-        transform: Transform::IDENTITY,
-        ..default()
-    });
+    commands.spawn((
+        PbrBundle {
+            mesh: meshes.add(mesh),
+            material: materials.add(Color::WHITE),
+            transform: Transform::IDENTITY,
+            ..default()
+        },
+        Wireframe,
+        WireframeColor { color: LIME.into() },
+    ));
 
     commands.spawn(PointLightBundle {
         point_light: PointLight {

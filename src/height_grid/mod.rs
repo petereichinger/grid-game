@@ -98,12 +98,12 @@ impl MeshBuilder for HeightGrid {
                 let i3 = array_offset + 3;
 
                 indices.push(i0 as u32);
-                indices.push(i1 as u32);
                 indices.push(i3 as u32);
+                indices.push(i1 as u32);
 
                 indices.push(i0 as u32);
-                indices.push(i3 as u32);
                 indices.push(i2 as u32);
+                indices.push(i3 as u32);
             }
         }
 
