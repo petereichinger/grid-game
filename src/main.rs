@@ -37,7 +37,6 @@ fn setup(
             (0, 0, 0, 0).into(),
         ],
     );
-    // let mesh = HeightGrid::new((1, 1), vec![0, 0, 0, 0]);
     commands.spawn(PbrBundle {
         mesh: meshes.add(mesh),
         material: materials.add(Color::WHITE),

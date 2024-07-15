@@ -1,47 +1,11 @@
+pub mod cell;
+pub mod corner;
+
 use bevy::prelude::*;
 use bevy::render::mesh::{Indices, MeshBuilder, PrimitiveTopology};
 use bevy::render::render_asset::RenderAssetUsages;
-
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub enum Corner {
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-}
-
-impl Corner {
-    fn get_corner_offset(&self) -> (f32, f32) {
-        match self {
-            Corner::TopLeft => (0.0, 0.0),
-            Corner::TopRight => (1.0, 0.0),
-            Corner::BottomLeft => (0.0, 1.0),
-            Corner::BottomRight => (1.0, 1.0),
-        }
-    }
-}
-
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub struct Cell {
-    heights: (u32, u32, u32, u32),
-}
-
-impl From<(u32, u32, u32, u32)> for Cell {
-    fn from(value: (u32, u32, u32, u32)) -> Self {
-        Self { heights: value }
-    }
-}
-
-impl Cell {
-    fn get_height(&self, corner: Corner) -> u32 {
-        match corner {
-            Corner::TopLeft => self.heights.0,
-            Corner::TopRight => self.heights.1,
-            Corner::BottomLeft => self.heights.2,
-            Corner::BottomRight => self.heights.3,
-        }
-    }
-}
+use cell::Cell;
+use corner::Corner;
 
 /// A grid where each cell contains 4 height values, one for each of its corners.
 /// Small example:
@@ -105,8 +69,6 @@ impl MeshBuilder for HeightGrid {
 
         for y in 0..self.cells_count.1 {
             for x in 0..self.cells_count.0 {
-                let array_offset = (self.cells_count.0 * y + x) * 4;
-                dbg!(array_offset);
                 let cell = (x, y);
                 let p0 = self.get_position(cell, Corner::TopLeft);
                 let p1 = self.get_position(cell, Corner::TopRight);
@@ -128,6 +90,8 @@ impl MeshBuilder for HeightGrid {
                 uvs.push([0.0, 1.0]);
                 uvs.push([1.0, 1.0]);
 
+                let array_offset = (self.cells_count.0 * y + x) * 4;
+
                 let i0 = array_offset;
                 let i1 = array_offset + 1;
                 let i2 = array_offset + 2;
@@ -142,11 +106,6 @@ impl MeshBuilder for HeightGrid {
                 indices.push(i2 as u32);
             }
         }
-
-        dbg!(&positions);
-        dbg!(&normals);
-        dbg!(&uvs);
-        dbg!(&indices);
 
         Mesh::new(
             PrimitiveTopology::TriangleList,
