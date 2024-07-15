@@ -9,73 +9,87 @@ pub enum Corner {
     BottomLeft,
     BottomRight,
 }
+
+impl Corner {
+    fn get_corner_offset(&self) -> (f32, f32) {
+        match self {
+            Corner::TopLeft => (0.0, 0.0),
+            Corner::TopRight => (1.0, 0.0),
+            Corner::BottomLeft => (0.0, 1.0),
+            Corner::BottomRight => (1.0, 1.0),
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct Cell {
+    heights: (u32, u32, u32, u32),
+}
+
+impl From<(u32, u32, u32, u32)> for Cell {
+    fn from(value: (u32, u32, u32, u32)) -> Self {
+        Self { heights: value }
+    }
+}
+
+impl Cell {
+    fn get_height(&self, corner: Corner) -> u32 {
+        match corner {
+            Corner::TopLeft => self.heights.0,
+            Corner::TopRight => self.heights.1,
+            Corner::BottomLeft => self.heights.2,
+            Corner::BottomRight => self.heights.3,
+        }
+    }
+}
+
 /// A grid where each cell contains 4 height values, one for each of its corners.
 /// Small example:
-/// 0--1,2--3
+/// 0--1,4--5
 /// |   |   |
 /// |   |   |
-/// 4--5,6--7
-/// 8--9,A--B
+/// 2--3,6--7
+/// 8--9,C--D
 /// |   |   |
 /// |   |   |
-/// C--D,E--F
+/// A--B,E--F
 pub struct HeightGrid {
     pub cells_count: (u32, u32),
-    pub heights: Vec<u32>,
+    pub cells: Vec<Cell>,
 }
 
 impl HeightGrid {
-    pub fn new(cells_count: (u32, u32), heights: Vec<u32>) -> Self {
+    pub fn new(cells_count: (u32, u32), cells: Vec<Cell>) -> Self {
         let (cells_width, cells_depth) = cells_count;
         assert!(cells_width > 0);
         assert!(cells_depth > 0);
-        assert!(heights.len() > 0);
-        assert_eq!(
-            4 * cells_width as usize * cells_depth as usize,
-            heights.len()
-        );
+        assert!(cells.len() > 0);
+        assert_eq!((cells_width * cells_depth) as usize, cells.len());
 
-        Self {
-            cells_count,
-            heights,
-        }
+        Self { cells_count, cells }
     }
 
-    fn get_corner_offset(corner: Corner) -> (u32, u32) {
-        match corner {
-            Corner::TopLeft => (0, 0),
-            Corner::TopRight => (1, 0),
-            Corner::BottomLeft => (0, 1),
-            Corner::BottomRight => (1, 1),
-        }
-    }
-
-    fn get_index(&self, cell: (u32, u32), corner: Corner) -> usize {
+    fn get_cell_index(&self, cell: (u32, u32)) -> usize {
         let (cells_width, cells_depth) = self.cells_count;
         let (cell_x, cell_y) = cell;
         assert!(cell_x < cells_width);
         assert!(cell_y < cells_depth);
 
-        let points_per_row = cells_width * 2;
-        let base_row = cell_y * 2;
-        let base_col = cell_x * 2;
-
-        let (col_offset, row_offset) = Self::get_corner_offset(corner);
-        let (col, row) = (base_col + col_offset, base_row + row_offset);
-
-        (points_per_row * row + col) as usize
+        (cells_width * cell_y + cell_x) as usize
     }
 
     fn get_position(&self, cell: (u32, u32), corner: Corner) -> Vec3 {
-        let index = self.get_index(cell, corner);
+        let cell_index = self.get_cell_index(cell);
 
-        let height = *self.heights.get(index).expect("index out of bounds");
+        let cell_data = self.cells.get(cell_index).expect("index out of bounds");
 
-        let (col_offset, row_offset) = Self::get_corner_offset(corner);
+        let height = cell_data.get_height(corner);
+
+        let (col_offset, row_offset) = corner.get_corner_offset();
         Vec3::new(
-            (cell.0 + col_offset) as f32,
-            (cell.1 + row_offset) as f32,
-            (height) as f32,
+            cell.0 as f32 + col_offset,
+            cell.1 as f32 + row_offset,
+            height as f32,
         )
     }
 }
@@ -158,13 +172,13 @@ mod tests {
     #[test]
     #[should_panic]
     fn fail_on_zero_width() {
-        HeightGrid::new((0, 1), vec![1, 1, 1, 1]);
+        HeightGrid::new((0, 1), vec![(1, 1, 1, 1).into()]);
     }
 
     #[test]
     #[should_panic]
     fn fail_on_zero_depth() {
-        HeightGrid::new((1, 0), vec![1, 1, 1, 1]);
+        HeightGrid::new((1, 0), vec![(1, 1, 1, 1).into()]);
     }
 
     #[test]
@@ -175,31 +189,19 @@ mod tests {
 
     #[test]
     fn works_on_flat_grid() {
-        HeightGrid::new((2, 2), vec![0; 16]);
+        HeightGrid::new((2, 2), vec![(0, 0, 0, 0).into(); 4]);
     }
 
     #[test]
     fn get_index() {
-        let grid = HeightGrid::new((2, 2), vec![0; 16]);
+        let grid = HeightGrid::new((2, 2), vec![(0, 0, 0, 0).into(); 4]);
 
-        assert_eq!(grid.get_index((0, 0), Corner::TopLeft), 0);
-        assert_eq!(grid.get_index((0, 0), Corner::TopRight), 1);
-        assert_eq!(grid.get_index((0, 0), Corner::BottomLeft), 4);
-        assert_eq!(grid.get_index((0, 0), Corner::BottomRight), 5);
+        assert_eq!(grid.get_cell_index((0, 0)), 0);
 
-        assert_eq!(grid.get_index((1, 0), Corner::TopLeft), 2);
-        assert_eq!(grid.get_index((1, 0), Corner::TopRight), 3);
-        assert_eq!(grid.get_index((1, 0), Corner::BottomLeft), 6);
-        assert_eq!(grid.get_index((1, 0), Corner::BottomRight), 7);
+        assert_eq!(grid.get_cell_index((1, 0)), 1);
 
-        assert_eq!(grid.get_index((0, 1), Corner::TopLeft), 8);
-        assert_eq!(grid.get_index((0, 1), Corner::TopRight), 9);
-        assert_eq!(grid.get_index((0, 1), Corner::BottomLeft), 12);
-        assert_eq!(grid.get_index((0, 1), Corner::BottomRight), 13);
+        assert_eq!(grid.get_cell_index((0, 1)), 2);
 
-        assert_eq!(grid.get_index((1, 1), Corner::TopLeft), 10);
-        assert_eq!(grid.get_index((1, 1), Corner::TopRight), 11);
-        assert_eq!(grid.get_index((1, 1), Corner::BottomLeft), 14);
-        assert_eq!(grid.get_index((1, 1), Corner::BottomRight), 15);
+        assert_eq!(grid.get_cell_index((1, 1)), 3);
     }
 }
