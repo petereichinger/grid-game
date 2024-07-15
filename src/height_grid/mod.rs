@@ -9,14 +9,14 @@ use corner::Corner;
 
 /// A grid where each cell contains 4 height values, one for each of its corners.
 /// Small example:
-/// 0--1,4--5
-/// |   |   |
-/// |   |   |
-/// 2--3,6--7
-/// 8--9,C--D
-/// |   |   |
-/// |   |   |
 /// A--B,E--F
+/// |   |   |
+/// |   |   |
+/// 8--9,C--D
+/// 2--3,6--7
+/// |   |   |
+/// |   |   |
+/// 0--1,4--5
 pub struct HeightGrid {
     pub cells_count: (u32, u32),
     pub cells: Vec<Cell>,
@@ -42,11 +42,14 @@ impl HeightGrid {
         (cells_width * cell_y + cell_x) as usize
     }
 
-    fn get_position(&self, cell: (u32, u32), corner: Corner) -> Vec3 {
+    fn get_cell(&self, cell: (u32, u32)) -> &Cell {
         let cell_index = self.get_cell_index(cell);
 
-        let cell_data = self.cells.get(cell_index).expect("index out of bounds");
+        self.cells.get(cell_index).expect("index out of bounds")
+    }
 
+    fn get_position(&self, cell: (u32, u32), corner: Corner) -> Vec3 {
+        let cell_data = self.get_cell(cell);
         let height = cell_data.get_height(corner);
 
         let (col_offset, row_offset) = corner.get_corner_offset();
@@ -55,6 +58,55 @@ impl HeightGrid {
             cell.1 as f32 + row_offset,
             height as f32,
         )
+    }
+
+    fn create_planar_grid_cell(
+        &self,
+        cell: (u32, u32),
+        positions: &mut Vec<Vec3>,
+        indices: &mut Vec<u32>,
+        normals: &mut Vec<[f32; 3]>,
+        uvs: &mut Vec<[f32; 2]>,
+    ) {
+        let tl = self.get_position(cell, Corner::TopLeft);
+        let tr = self.get_position(cell, Corner::TopRight);
+        let bl = self.get_position(cell, Corner::BottomLeft);
+        let br = self.get_position(cell, Corner::BottomRight);
+
+        let array_offset = positions.len();
+
+        positions.push(tl);
+        positions.push(tr);
+        positions.push(bl);
+        positions.push(br);
+
+        let i0 = array_offset;
+        let i1 = array_offset + 1;
+        let i2 = array_offset + 2;
+        let i3 = array_offset + 3;
+
+        indices.push(i0 as u32);
+        indices.push(i3 as u32);
+        indices.push(i1 as u32);
+
+        indices.push(i0 as u32);
+        indices.push(i2 as u32);
+        indices.push(i3 as u32);
+
+        let bl_br = (br - bl).normalize_or(Vec3::Z);
+        let br_tr = (tr - br).normalize_or(Vec3::Z);
+        let tl_tr = (tr - tl).normalize_or(Vec3::Z);
+        let bl_tl = (tl - bl).normalize_or(Vec3::Z);
+
+        normals.push((-bl_tl).cross(tl_tr).into());
+        normals.push((-tl_tr).cross(-br_tr).into());
+        normals.push(bl_br.cross(bl_tl).into());
+        normals.push(br_tr.cross(-bl_br).into());
+
+        uvs.push([0.0, 0.0]);
+        uvs.push([1.0, 0.0]);
+        uvs.push([0.0, 1.0]);
+        uvs.push([1.0, 1.0]);
     }
 }
 
@@ -69,41 +121,13 @@ impl MeshBuilder for HeightGrid {
 
         for y in 0..self.cells_count.1 {
             for x in 0..self.cells_count.0 {
-                let cell = (x, y);
-                let p0 = self.get_position(cell, Corner::TopLeft);
-                let p1 = self.get_position(cell, Corner::TopRight);
-                let p2 = self.get_position(cell, Corner::BottomLeft);
-                let p3 = self.get_position(cell, Corner::BottomRight);
-
-                positions.push(p0);
-                positions.push(p1);
-                positions.push(p2);
-                positions.push(p3);
-
-                normals.push(Vec3::Z.into());
-                normals.push(Vec3::Z.into());
-                normals.push(Vec3::Z.into());
-                normals.push(Vec3::Z.into());
-
-                uvs.push([0.0, 0.0]);
-                uvs.push([1.0, 0.0]);
-                uvs.push([0.0, 1.0]);
-                uvs.push([1.0, 1.0]);
-
-                let array_offset = (self.cells_count.0 * y + x) * 4;
-
-                let i0 = array_offset;
-                let i1 = array_offset + 1;
-                let i2 = array_offset + 2;
-                let i3 = array_offset + 3;
-
-                indices.push(i0 as u32);
-                indices.push(i3 as u32);
-                indices.push(i1 as u32);
-
-                indices.push(i0 as u32);
-                indices.push(i2 as u32);
-                indices.push(i3 as u32);
+                self.create_planar_grid_cell(
+                    (x, y),
+                    &mut positions,
+                    &mut indices,
+                    &mut normals,
+                    &mut uvs,
+                );
             }
         }
 
