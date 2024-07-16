@@ -1,3 +1,4 @@
+mod close_on_esc;
 mod height_grid;
 
 use bevy::{
@@ -8,8 +9,8 @@ use bevy::{
         settings::{RenderCreation, WgpuFeatures, WgpuSettings},
         RenderPlugin,
     },
-    window::ClosingWindow,
 };
+
 use height_grid::HeightGrid;
 
 fn main() {
@@ -26,20 +27,8 @@ fn main() {
             WireframePlugin,
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, draw_gizmos)
-        .add_systems(Update, close_on_esc)
+        .add_systems(Update, close_on_esc::close_on_esc)
         .run();
-}
-
-fn close_on_esc(
-    mut commands: Commands,
-    window: Query<(Entity, &Window)>,
-    keys: Res<ButtonInput<KeyCode>>,
-) {
-    let (entity, _) = window.single();
-    if keys.just_pressed(KeyCode::Escape) {
-        commands.entity(entity).insert(ClosingWindow);
-    }
 }
 
 fn setup(
@@ -79,19 +68,5 @@ fn setup(
     commands.spawn(Camera3dBundle {
         transform: Transform::from_xyz(0.0, -4.0, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
-    });
-}
-const RED: Color = Color::linear_rgb(1.0, 0.0, 0.0);
-
-fn draw_gizmos(mut gizmos: Gizmos) {
-    (0..10).for_each(|x| {
-        (0..10).for_each(|y| {
-            gizmos.sphere(
-                Vec3::new(x as f32, y as f32, 0.0),
-                Quat::IDENTITY,
-                0.05,
-                RED,
-            );
-        })
     });
 }

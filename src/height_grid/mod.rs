@@ -7,6 +7,10 @@ use bevy::render::render_asset::RenderAssetUsages;
 use cell::Cell;
 use corner::Corner;
 
+enum Split {
+    Slash,
+    Backslash,
+}
 /// A grid where each cell contains 4 height values, one for each of its corners.
 /// Small example:
 /// A--B,E--F
@@ -107,6 +111,31 @@ impl HeightGrid {
         uvs.push([1.0, 0.0]);
         uvs.push([0.0, 1.0]);
         uvs.push([1.0, 1.0]);
+    }
+
+    fn get_height_buckets(&self, cell: (u32, u32)) -> Split {
+        let cell = self.get_cell(cell);
+
+        let tl = cell.get_height(Corner::TopLeft);
+        let tr = cell.get_height(Corner::TopRight);
+        let bl = cell.get_height(Corner::BottomLeft);
+        let br = cell.get_height(Corner::BottomRight);
+
+        let heights = [tl, tr, bl, br];
+        let min = heights.iter().min().expect("why no min");
+        let max = heights.iter().max().expect("why no max");
+
+        let diff = max - min;
+
+        if diff > 1 {
+            panic!("diff > 1")
+        }
+
+        if diff == 0 {
+            return Split::Slash;
+        }
+
+        todo!()
     }
 }
 
