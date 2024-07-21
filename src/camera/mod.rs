@@ -1,19 +1,16 @@
-use bevy::{input::mouse::MouseWheel, prelude::*, render::extract_resource::ExtractResource};
+mod mouse_scroll;
+
+use bevy::prelude::*;
+use mouse_scroll::{AccumulatedScrolls, MouseScrollPlugin};
 
 pub struct GameCameraPlugin;
 
 impl Plugin for GameCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(AccumulatedScrolls::default())
+        app.add_plugins(MouseScrollPlugin)
             .add_systems(Startup, setup)
-            .add_systems(PreUpdate, accumulate_mouse_scroll)
-            .add_systems(Update, (move_camera_xy, zoom_camera));
+            .add_systems(Update, (move_camera_xy, zoom_camera, rotate_camera));
     }
-}
-
-#[derive(Resource, Default)]
-struct AccumulatedScrolls {
-    scroll: f32,
 }
 
 #[derive(Component)]
@@ -86,34 +83,49 @@ fn move_camera_xy(
     x_trans.translation += time.delta_seconds() * dir * 4.0f32;
 }
 
+const ZOOM_SPEED: f32 = 50.0;
+const MIN_ZOOM: f32 = 25.0;
+const MAX_ZOOM: f32 = 100.0;
+const MIN_X_ROT: f32 = 0.1745329; // 10 degree
+const MAX_X_ROT: f32 = 1.396263; // 80 degree
+
 fn zoom_camera(
     time: Res<Time>,
-    mut camera: Query<&mut Transform, With<MainCamera>>,
+    mut camera_zoom: Query<&mut Transform, (With<MainCamera>, Without<XRotator>)>,
+    mut x_rotator: Query<&mut Transform, (With<XRotator>, Without<MainCamera>)>,
     accumulated_scrolls: Res<AccumulatedScrolls>,
 ) {
-    let mut camera_trans = camera.single_mut();
+    let mut camera_trans = camera_zoom.single_mut();
+    let mut x_rotator = x_rotator.single_mut();
+
     let mut zoom = camera_trans.translation.z;
 
-    zoom += time.delta_seconds() * 50.0 * -1.0 * accumulated_scrolls.scroll;
+    zoom += time.delta_seconds() * ZOOM_SPEED * -1.0 * accumulated_scrolls.scroll;
 
-    zoom = zoom.clamp(25.0, 100.0);
+    zoom = zoom.clamp(MIN_ZOOM, MAX_ZOOM);
+
+    let zoom_fraction = (zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM);
 
     camera_trans.translation.z = zoom;
+
+    x_rotator.rotation =
+        Quat::from_rotation_x(f32::interpolate(&MAX_X_ROT, &MIN_X_ROT, zoom_fraction));
 }
 
-fn accumulate_mouse_scroll(
-    mut scrolls: EventReader<MouseWheel>,
-    mut accumulated_scrolls: ResMut<AccumulatedScrolls>,
+fn rotate_camera(
+    time: Res<Time>,
+    mut z_rotator: Query<&mut Transform, (With<ZRotator>)>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
-    use bevy::input::mouse::MouseScrollUnit;
+    let mut z_rotator = z_rotator.single_mut();
 
-    let scroll_sum: f32 = scrolls
-        .read()
-        .map(|scroll| match scroll.unit {
-            MouseScrollUnit::Line => 8.0 * scroll.y,
-            MouseScrollUnit::Pixel => scroll.y,
-        })
-        .sum();
+    let rotate: f32 = if keyboard_input.pressed(KeyCode::KeyQ) {
+        -1.0
+    } else if keyboard_input.pressed(KeyCode::KeyE) {
+        1.0
+    } else {
+        return;
+    };
 
-    accumulated_scrolls.scroll = scroll_sum;
+    z_rotator.rotate_z(time.delta_seconds() * 90.0 * rotate.to_radians());
 }
