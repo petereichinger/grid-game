@@ -1,3 +1,4 @@
+mod camera;
 mod close_on_esc;
 mod height_grid;
 
@@ -25,6 +26,7 @@ fn main() {
                 ..default()
             }),
             WireframePlugin,
+            camera::GameCameraPlugin,
         ))
         .add_systems(Startup, setup)
         .add_systems(Update, close_on_esc::close_on_esc)
@@ -67,11 +69,6 @@ fn setup(
             ..default()
         },
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    });
-    // camera
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, -4.0, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 }
