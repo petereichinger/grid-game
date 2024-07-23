@@ -3,8 +3,6 @@ pub mod corner;
 pub mod mesh_builder;
 
 use bevy::prelude::*;
-use bevy::render::mesh::{Indices, MeshBuilder, PrimitiveTopology};
-use bevy::render::render_asset::RenderAssetUsages;
 use cell::Cell;
 use corner::Corner;
 
@@ -28,7 +26,7 @@ impl HeightGrid {
         let (cells_width, cells_depth) = cells_count;
         assert!(cells_width > 0);
         assert!(cells_depth > 0);
-        assert!(cells.len() > 0);
+        assert!(!cells.is_empty());
         assert_eq!((cells_width * cells_depth) as usize, cells.len());
 
         Self { cells_count, cells }

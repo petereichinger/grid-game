@@ -114,7 +114,7 @@ fn zoom_camera(
 
 fn rotate_camera(
     time: Res<Time>,
-    mut z_rotator: Query<&mut Transform, (With<ZRotator>)>,
+    mut z_rotator: Query<&mut Transform, With<ZRotator>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
     let mut z_rotator = z_rotator.single_mut();

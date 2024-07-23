@@ -82,12 +82,10 @@ fn get_cell_type(height_grid: &HeightGrid, cell: (u32, u32)) -> CellMeshType {
             Equal => CellMeshType::Shared,
             Greater => CellMeshType::Backslash,
         }
+    } else if backslash_equal {
+        CellMeshType::Backslash
     } else {
-        if backslash_equal {
-            CellMeshType::Backslash
-        } else {
-            CellMeshType::Slash
-        }
+        CellMeshType::Slash
     }
 }
 
@@ -187,7 +185,7 @@ fn create_split_cell(
         uvs.push([1.0, 1.0]);
     };
 
-    indices.push(array_offset + 0);
+    indices.push(array_offset);
     indices.push(array_offset + 1);
     indices.push(array_offset + 2);
 
@@ -232,10 +230,10 @@ fn create_flat_cell(height_grid: &HeightGrid, array_offset: u32, cell: (u32, u32
     normals.push(Vec3::Z.into());
     normals.push(Vec3::Z.into());
 
-    uvs.push([0.0, 1.0].into());
-    uvs.push([1.0, 1.0].into());
-    uvs.push([0.0, 0.0].into());
-    uvs.push([1.0, 0.0].into());
+    uvs.push([0.0, 1.0]);
+    uvs.push([1.0, 1.0]);
+    uvs.push([0.0, 0.0]);
+    uvs.push([1.0, 0.0]);
 
     CellMeshData {
         positions,
