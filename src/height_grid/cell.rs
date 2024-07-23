@@ -12,6 +12,12 @@ impl From<(u32, u32, u32, u32)> for Cell {
 }
 
 impl Cell {
+    pub fn new(tl: u32, tr: u32, bl: u32, br: u32) -> Self {
+        Self {
+            heights: (tl, tr, bl, br),
+        }
+    }
+
     pub fn get_height(&self, corner: Corner) -> u32 {
         match corner {
             Corner::TopLeft => self.heights.0,

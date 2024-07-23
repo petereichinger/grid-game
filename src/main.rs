@@ -38,7 +38,7 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mesh = HeightGrid::new(
+    let grid = HeightGrid::new(
         (3, 3),
         vec![
             (0, 1, 0, 0).into(),
@@ -52,6 +52,7 @@ fn setup(
             (0, 0, 1, 0).into(),
         ],
     );
+    let mesh = height_grid::mesh_builder::Builder::new(&grid);
     commands.spawn((
         PbrBundle {
             mesh: meshes.add(mesh),
