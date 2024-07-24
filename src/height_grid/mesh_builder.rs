@@ -30,14 +30,22 @@ impl MeshBuilder for Builder<'_> {
 
         for y in 0..self.height_grid.cells_count.1 {
             for x in 0..self.height_grid.cells_count.0 {
-                create_grid_cell(
-                    self.height_grid,
-                    (x, y),
-                    &mut positions,
-                    &mut indices,
-                    &mut normals,
-                    &mut uvs,
-                );
+                let cell = (x, y);
+                let grid = self.height_grid;
+                let mesh_type = get_cell_type(grid, cell);
+
+                let array_offset = positions.len() as u32;
+
+                let mut data = match mesh_type {
+                    CellMeshType::Shared => create_flat_cell(grid, array_offset, cell),
+                    CellMeshType::Slash => create_split_cell(grid, array_offset, cell, true),
+                    CellMeshType::Backslash => create_split_cell(grid, array_offset, cell, false),
+                };
+
+                positions.append(&mut data.positions);
+                indices.append(&mut data.indices);
+                normals.append(&mut data.normals);
+                uvs.append(&mut data.uvs);
             }
         }
 
@@ -57,6 +65,7 @@ enum CellMeshType {
     Slash,
     Backslash,
 }
+
 struct CellMeshData {
     positions: Vec<Vec3>,
     indices: Vec<u32>,
@@ -97,20 +106,6 @@ fn create_grid_cell(
     normals: &mut Vec<[f32; 3]>,
     uvs: &mut Vec<[f32; 2]>,
 ) {
-    let mesh_type = get_cell_type(height_grid, cell);
-
-    let array_offset = positions.len() as u32;
-
-    let mut data = match mesh_type {
-        CellMeshType::Shared => create_flat_cell(height_grid, array_offset, cell),
-        CellMeshType::Slash => create_split_cell(height_grid, array_offset, cell, true),
-        CellMeshType::Backslash => create_split_cell(height_grid, array_offset, cell, false),
-    };
-
-    positions.append(&mut data.positions);
-    indices.append(&mut data.indices);
-    normals.append(&mut data.normals);
-    uvs.append(&mut data.uvs);
 }
 
 fn create_split_cell(
