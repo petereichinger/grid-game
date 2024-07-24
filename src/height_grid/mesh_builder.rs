@@ -23,10 +23,13 @@ impl MeshBuilder for Builder<'_> {
             self.height_grid.cells_count.0 as usize * self.height_grid.cells_count.1 as usize * 4;
         let num_indices =
             self.height_grid.cells_count.0 as usize * self.height_grid.cells_count.1 as usize * 6;
-        let mut positions: Vec<Vec3> = Vec::with_capacity(num_vertices);
-        let mut normals: Vec<[f32; 3]> = Vec::with_capacity(num_vertices);
-        let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(num_vertices);
-        let mut indices: Vec<u32> = Vec::with_capacity(num_indices);
+
+        let mut mesh_data = CellMeshData {
+            positions: Vec::with_capacity(num_vertices),
+            normals: Vec::with_capacity(num_vertices),
+            uvs: Vec::with_capacity(num_vertices),
+            indices: Vec::with_capacity(num_indices),
+        };
 
         for y in 0..self.height_grid.cells_count.1 {
             for x in 0..self.height_grid.cells_count.0 {
@@ -34,20 +37,20 @@ impl MeshBuilder for Builder<'_> {
                 let grid = self.height_grid;
                 let mesh_type = get_cell_type(grid, cell);
 
-                let array_offset = positions.len() as u32;
-
-                let mut data = match mesh_type {
-                    CellMeshType::Shared => create_flat_cell(grid, array_offset, cell),
-                    CellMeshType::Slash => create_split_cell(grid, array_offset, cell, true),
-                    CellMeshType::Backslash => create_split_cell(grid, array_offset, cell, false),
+                match mesh_type {
+                    CellMeshType::Shared => create_flat_cell(grid, &mut mesh_data, cell),
+                    CellMeshType::Slash => create_split_cell(grid, &mut mesh_data, cell, true),
+                    CellMeshType::Backslash => create_split_cell(grid, &mut mesh_data, cell, false),
                 };
-
-                positions.append(&mut data.positions);
-                indices.append(&mut data.indices);
-                normals.append(&mut data.normals);
-                uvs.append(&mut data.uvs);
             }
         }
+
+        let CellMeshData {
+            positions,
+            normals,
+            uvs,
+            indices,
+        } = mesh_data;
 
         Mesh::new(
             PrimitiveTopology::TriangleList,
@@ -98,27 +101,24 @@ fn get_cell_type(height_grid: &HeightGrid, cell: (u32, u32)) -> CellMeshType {
     }
 }
 
-fn create_grid_cell(
-    height_grid: &HeightGrid,
-    cell: (u32, u32),
-    positions: &mut Vec<Vec3>,
-    indices: &mut Vec<u32>,
-    normals: &mut Vec<[f32; 3]>,
-    uvs: &mut Vec<[f32; 2]>,
-) {
-}
-
 fn create_split_cell(
     height_grid: &HeightGrid,
-    array_offset: u32,
+    mesh_data: &mut CellMeshData,
     cell: (u32, u32),
     slash: bool,
-) -> CellMeshData {
-    let mut positions = vec![];
-    let mut indices = vec![];
-    let mut normals: Vec<[f32; 3]> = vec![];
-    let mut uvs = vec![];
+) {
+    let array_offset: u32 = mesh_data
+        .positions
+        .len()
+        .try_into()
+        .expect("must be a valid u32");
 
+    let CellMeshData {
+        positions,
+        normals,
+        uvs,
+        indices,
+    } = mesh_data;
     let tl = height_grid.get_position(cell, Corner::TopLeft);
     let tr = height_grid.get_position(cell, Corner::TopRight);
     let bl = height_grid.get_position(cell, Corner::BottomLeft);
@@ -187,19 +187,20 @@ fn create_split_cell(
     indices.push(array_offset + 3);
     indices.push(array_offset + 4);
     indices.push(array_offset + 5);
+}
+fn create_flat_cell(height_grid: &HeightGrid, mesh_data: &mut CellMeshData, cell: (u32, u32)) {
+    let array_offset: u32 = mesh_data
+        .positions
+        .len()
+        .try_into()
+        .expect("must be a valid u32");
 
-    CellMeshData {
+    let CellMeshData {
         positions,
-        indices,
         normals,
         uvs,
-    }
-}
-fn create_flat_cell(height_grid: &HeightGrid, array_offset: u32, cell: (u32, u32)) -> CellMeshData {
-    let mut positions = vec![];
-    let mut indices = vec![];
-    let mut normals = vec![];
-    let mut uvs = vec![];
+        indices,
+    } = mesh_data;
 
     let tl = height_grid.get_position(cell, Corner::TopLeft);
     let tr = height_grid.get_position(cell, Corner::TopRight);
@@ -229,11 +230,4 @@ fn create_flat_cell(height_grid: &HeightGrid, array_offset: u32, cell: (u32, u32
     uvs.push([1.0, 1.0]);
     uvs.push([0.0, 0.0]);
     uvs.push([1.0, 0.0]);
-
-    CellMeshData {
-        positions,
-        indices,
-        normals,
-        uvs,
-    }
 }
