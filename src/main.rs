@@ -41,9 +41,9 @@ fn setup(
     let grid = HeightGrid::new(
         (3, 3),
         vec![
-            (0, 1, 0, 0).into(),
-            (1, 1, 0, 0).into(),
-            (1, 0, 0, 0).into(),
+            (0, 0, 0, 0).into(),
+            (0, 0, 0, 0).into(),
+            (0, 0, 0, 0).into(),
             (0, 1, 0, 1).into(),
             (1, 1, 1, 1).into(),
             (1, 0, 1, 0).into(),

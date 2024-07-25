@@ -3,7 +3,7 @@ pub mod corner;
 pub mod mesh_builder;
 
 use bevy::prelude::*;
-use cell::Cell;
+use cell::{Cell, Coord};
 use corner::Corner;
 
 /// A grid where each cell contains 4 height values, one for each of its corners.
@@ -32,6 +32,10 @@ impl HeightGrid {
         Self { cells_count, cells }
     }
 
+    fn valid_coord(&self, coord: Coord) -> bool {
+        coord.0 < self.cells_count.0 && coord.1 < self.cells_count.1
+    }
+
     fn get_cell_index(&self, cell: (u32, u32)) -> usize {
         let (cells_width, cells_depth) = self.cells_count;
         let (cell_x, cell_y) = cell;
@@ -41,20 +45,27 @@ impl HeightGrid {
         (cells_width * cell_y + cell_x) as usize
     }
 
-    fn get_cell(&self, cell: (u32, u32)) -> &Cell {
-        let cell_index = self.get_cell_index(cell);
+    fn try_get_cell(&self, coord: Coord) -> Option<&Cell> {
+        if !self.valid_coord(coord) {
+            return None;
+        }
+
+        return Some(self.get_cell(coord));
+    }
+    fn get_cell(&self, coord: Coord) -> &Cell {
+        let cell_index = self.get_cell_index(coord);
 
         self.cells.get(cell_index).expect("index out of bounds")
     }
 
-    fn get_position(&self, cell: (u32, u32), corner: Corner) -> Vec3 {
-        let cell_data = self.get_cell(cell);
+    fn get_position(&self, coord: Coord, corner: Corner) -> Vec3 {
+        let cell_data = self.get_cell(coord);
         let height = cell_data.get_height(corner);
 
         let (col_offset, row_offset) = corner.get_corner_offset();
         Vec3::new(
-            cell.0 as f32 + col_offset,
-            cell.1 as f32 + row_offset,
+            coord.0 as f32 + col_offset,
+            coord.1 as f32 + row_offset,
             height as f32,
         )
     }
