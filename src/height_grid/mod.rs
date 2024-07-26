@@ -36,7 +36,7 @@ impl HeightGrid {
         coord.0 < self.cells_count.0 && coord.1 < self.cells_count.1
     }
 
-    fn get_cell_index(&self, cell: (u32, u32)) -> usize {
+    fn get_cell_index(&self, cell: Coord) -> usize {
         let (cells_width, cells_depth) = self.cells_count;
         let (cell_x, cell_y) = cell;
         assert!(cell_x < cells_width);
