@@ -17,18 +17,18 @@ use corner::Corner;
 /// |   |   |
 /// 2--3,6--7
 pub struct HeightGrid {
-    pub cells_count: (u32, u32),
-    pub cells: Vec<Cell>,
+    cells_count: (u32, u32),
+    cells: Box<[Cell]>,
 }
 
 impl HeightGrid {
-    pub fn new(cells_count: (u32, u32), cells: Vec<Cell>) -> Self {
+    pub fn new(cells_count: (u32, u32), cells: impl Into<Box<[Cell]>>) -> Self {
+        let cells: Box<[Cell]> = cells.into();
         let (cells_width, cells_depth) = cells_count;
         assert!(cells_width > 0);
         assert!(cells_depth > 0);
         assert!(!cells.is_empty());
         assert_eq!((cells_width * cells_depth) as usize, cells.len());
-
         Self { cells_count, cells }
     }
 
@@ -109,11 +109,61 @@ mod tests {
         let grid = HeightGrid::new((2, 2), vec![(0, 0, 0, 0).into(); 4]);
 
         assert_eq!(grid.get_cell_index((0, 0)), 0);
-
         assert_eq!(grid.get_cell_index((1, 0)), 1);
-
         assert_eq!(grid.get_cell_index((0, 1)), 2);
-
         assert_eq!(grid.get_cell_index((1, 1)), 3);
+    }
+
+    #[test]
+    fn valid_coord_works() {
+        let grid = HeightGrid::new((2, 2), vec![(0, 0, 0, 0).into(); 4]);
+
+        assert!(grid.valid_coord((0, 0)));
+        assert!(grid.valid_coord((1, 0)));
+        assert!(grid.valid_coord((0, 1)));
+        assert!(grid.valid_coord((1, 1)));
+
+        assert!(!grid.valid_coord((2, 2)));
+    }
+
+    #[test]
+    fn try_get_cell_works() {
+        let grid = HeightGrid::new((2, 2), vec![(0, 0, 0, 0).into(); 4]);
+        let cell: Cell = (0, 0, 0, 0).into();
+        assert_eq!(grid.try_get_cell((0, 0)), Some(&cell));
+        assert_eq!(grid.try_get_cell((2, 2)), None);
+    }
+
+    #[test]
+    #[should_panic]
+    fn get_cell_panics() {
+        let grid = HeightGrid::new((2, 2), vec![(0, 0, 0, 0).into(); 4]);
+        grid.get_cell((2, 2));
+    }
+
+    #[test]
+    fn get_position() {
+        let grid = HeightGrid::new(
+            (2, 2),
+            [
+                (0, 0, 0, 0).into(),
+                (0, 0, 0, 1).into(),
+                (1, 1, 2, 1).into(),
+                (1, 0, 1, 1).into(),
+            ],
+        );
+
+        assert_eq!(
+            grid.get_position((0, 0), Corner::TopLeft),
+            Vec3::new(0.0, 1.0, 0.0)
+        );
+        assert_eq!(
+            grid.get_position((1, 0), Corner::BottomRight),
+            Vec3::new(2.0, 0.0, 1.0)
+        );
+        assert_eq!(
+            grid.get_position((0, 1), Corner::BottomLeft),
+            Vec3::new(0.0, 1.0, 2.0)
+        );
     }
 }

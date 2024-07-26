@@ -2,7 +2,7 @@ use super::corner::Corner;
 
 pub type Coord = (u32, u32);
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Cell {
     heights: (u32, u32, u32, u32),
 }
