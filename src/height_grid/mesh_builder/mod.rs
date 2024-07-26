@@ -109,129 +109,24 @@ fn get_cell_type(height_grid: &HeightGrid, cell: Coord) -> CellMeshType {
 }
 
 fn create_split_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord, slash: bool) {
-    let array_offset: u32 = mesh_data
-        .positions
-        .len()
-        .try_into()
-        .expect("must be a valid u32");
-
-    let MeshData {
-        positions,
-        normals,
-        uvs,
-        indices,
-    } = mesh_data;
     let tl = height_grid.get_position(cell, Corner::TopLeft);
     let tr = height_grid.get_position(cell, Corner::TopRight);
     let bl = height_grid.get_position(cell, Corner::BottomLeft);
     let br = height_grid.get_position(cell, Corner::BottomRight);
-
-    let bl_br = (br - bl).normalize_or(Vec3::Z);
-    let br_tr = (tr - br).normalize_or(Vec3::Z);
-    let tl_tr = (tr - tl).normalize_or(Vec3::Z);
-    let bl_tl = (tl - bl).normalize_or(Vec3::Z);
-
-    let bl_tr = (tr - bl).normalize_or(Vec3::Z);
-    let br_tl = (tl - br).normalize_or(Vec3::Z);
     if slash {
-        positions.push(tl);
-        positions.push(bl);
-        positions.push(tr);
-
-        positions.push(tr);
-        positions.push(bl);
-        positions.push(br);
-
-        normals.push((-bl_tl).cross(tl_tr).into());
-        normals.push((bl_tr).cross(bl_tl).into());
-        normals.push((-tl_tr).cross(-bl_tr).into());
-
-        normals.push((-bl_tr).cross(-br_tr).into());
-        normals.push(bl_br.cross(bl_tr).into());
-        normals.push(br_tr.cross(-bl_br).into());
-        uvs.push([0.0, 1.0]);
-        uvs.push([0.0, 0.0]);
-        uvs.push([1.0, 1.0]);
-
-        uvs.push([1.0, 1.0]);
-        uvs.push([0.0, 0.0]);
-        uvs.push([1.0, 0.0]);
+        mesh_data.create_triangle(&[tl, bl, tr]);
+        mesh_data.create_triangle(&[tr, bl, br]);
     } else {
-        positions.push(tl);
-        positions.push(bl);
-        positions.push(br);
-
-        positions.push(tl);
-        positions.push(br);
-        positions.push(tr);
-
-        normals.push((-bl_tl).cross(tl_tr).into());
-        normals.push((bl_br).cross(bl_tl).into());
-        normals.push((br_tl).cross(-bl_br).into());
-
-        normals.push((-br_tl).cross(tl_tr).into());
-        normals.push(br_tr.cross(br_tl).into());
-        normals.push((-tl_tr).cross(-br_tr).into());
-
-        uvs.push([0.0, 1.0]);
-        uvs.push([0.0, 0.0]);
-        uvs.push([1.0, 0.0]);
-
-        uvs.push([0.0, 1.0]);
-        uvs.push([1.0, 0.0]);
-        uvs.push([1.0, 1.0]);
+        mesh_data.create_triangle(&[tl, bl, br]);
+        mesh_data.create_triangle(&[tl, br, tr]);
     };
-
-    indices.push(array_offset);
-    indices.push(array_offset + 1);
-    indices.push(array_offset + 2);
-
-    indices.push(array_offset + 3);
-    indices.push(array_offset + 4);
-    indices.push(array_offset + 5);
 }
 fn create_flat_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord) {
-    let array_offset: u32 = mesh_data
-        .positions
-        .len()
-        .try_into()
-        .expect("must be a valid u32");
-
-    let MeshData {
-        positions,
-        normals,
-        uvs,
-        indices,
-    } = mesh_data;
-
     let tl = height_grid.get_position(cell, Corner::TopLeft);
     let tr = height_grid.get_position(cell, Corner::TopRight);
     let bl = height_grid.get_position(cell, Corner::BottomLeft);
     let br = height_grid.get_position(cell, Corner::BottomRight);
-    positions.push(tl);
-    positions.push(tr);
-    positions.push(bl);
-    positions.push(br);
-
-    let (o1, o2, o3, o4, o5, o6) = (0, 2, 1, 1, 2, 3);
-
-    indices.push(array_offset + o1);
-    indices.push(array_offset + o2);
-    indices.push(array_offset + o3);
-
-    indices.push(array_offset + o4);
-    indices.push(array_offset + o5);
-    indices.push(array_offset + o6);
-
-    normals.push(Vec3::Z.into());
-    normals.push(Vec3::Z.into());
-    normals.push(Vec3::Z.into());
-    normals.push(Vec3::Z.into());
-
-    uvs.push([0.0, 1.0]);
-    uvs.push([1.0, 1.0]);
-    uvs.push([0.0, 0.0]);
-    uvs.push([1.0, 0.0]);
+    mesh_data.create_quad(&[tl, tr, bl, br]);
 }
 
 fn create_cliffs(grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord) {
