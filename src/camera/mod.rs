@@ -1,6 +1,6 @@
 mod mouse_scroll;
 
-use bevy::prelude::*;
+use bevy::{color::palettes::css::*, prelude::*};
 use mouse_scroll::{AccumulatedScrolls, MouseScrollPlugin};
 
 pub struct GameCameraPlugin;
@@ -51,34 +51,34 @@ fn setup(mut commands: Commands) {
 
 fn move_camera_xy(
     time: Res<Time>,
-    mut x_rotator: Query<&mut Transform, With<XRotator>>,
+    mut x_rotator: Query<&mut Transform, With<ZRotator>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
     let mut x_trans = x_rotator.single_mut();
 
     let up = if keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]) {
-        Vec3::Y
+        1.0
     } else {
-        Vec3::ZERO
+        0.0
     };
     let down = if keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]) {
-        Vec3::NEG_Y
+        -1.0
     } else {
-        Vec3::ZERO
+        0.0
     };
 
     let left = if keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]) {
-        Vec3::NEG_X
+        -1.0
     } else {
-        Vec3::ZERO
+        0.0
     };
     let right = if keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]) {
-        Vec3::X
+        1.0
     } else {
-        Vec3::ZERO
+        0.0
     };
 
-    let dir = up + down + left + right;
+    let dir = (up + down) * x_trans.up() + (left + right) * x_trans.right();
 
     x_trans.translation += time.delta_seconds() * dir * 4.0f32;
 }
