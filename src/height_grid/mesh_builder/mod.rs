@@ -240,7 +240,7 @@ fn create_cliffs(grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord) {
     create_cliff(grid, mesh_data, cell, (BottomLeft, BottomRight), Horizontal);
     create_cliff(grid, mesh_data, cell, (BottomRight, TopRight), Vertical);
     create_cliff(grid, mesh_data, cell, (TopRight, TopLeft), Horizontal);
-    create_cliff(grid, mesh_data, cell, (TopLeft, BottomRight), Vertical);
+    create_cliff(grid, mesh_data, cell, (TopLeft, BottomLeft), Vertical);
 }
 
 fn create_cliff(
