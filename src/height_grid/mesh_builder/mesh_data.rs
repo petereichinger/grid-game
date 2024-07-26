@@ -42,15 +42,13 @@ impl MeshData {
 
         self.positions.extend(vertices);
 
-        let (o1, o2, o3, o4, o5, o6) = (0, 2, 1, 1, 2, 3);
+        self.indices.push(index_offset + 0);
+        self.indices.push(index_offset + 2);
+        self.indices.push(index_offset + 1);
 
-        self.indices.push(index_offset + o1);
-        self.indices.push(index_offset + o2);
-        self.indices.push(index_offset + o3);
-
-        self.indices.push(index_offset + o4);
-        self.indices.push(index_offset + o5);
-        self.indices.push(index_offset + o6);
+        self.indices.push(index_offset + 1);
+        self.indices.push(index_offset + 2);
+        self.indices.push(index_offset + 3);
 
         let a = (vertices[2] - vertices[0]).normalize_or(Vec3::X);
         let b = (vertices[1] - vertices[0]).normalize_or(Vec3::Y);
