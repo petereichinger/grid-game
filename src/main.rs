@@ -4,6 +4,7 @@ mod height_grid;
 
 use bevy::{
     color::palettes::css::LIME,
+    core::FrameCount,
     pbr::wireframe::{Wireframe, WireframeColor, WireframePlugin},
     prelude::*,
     render::{
@@ -17,20 +18,40 @@ use height_grid::HeightGrid;
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins.set(RenderPlugin {
-                render_creation: RenderCreation::Automatic(WgpuSettings {
-                    // WARN this is a native only feature. It will not work with webgl or webgpu
-                    features: WgpuFeatures::POLYGON_MODE_LINE,
+            DefaultPlugins
+                .set(RenderPlugin {
+                    render_creation: RenderCreation::Automatic(WgpuSettings {
+                        // WARN this is a native only feature. It will not work with webgl or webgpu
+                        features: WgpuFeatures::POLYGON_MODE_LINE,
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Grid Game".into(),
+                        name: Some("grid-game".into()),
+                        visible: false,
+                        ..default()
+                    }),
                     ..default()
                 }),
-                ..default()
-            }),
             WireframePlugin,
             camera::GameCameraPlugin,
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, close_on_esc::close_on_esc)
+        .add_systems(Update, (close_on_esc::close_on_esc, make_visible))
         .run();
+}
+
+fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
+    // The delay may be different for your app or system.
+    if frames.0 == 3 {
+        // At this point the gpu is ready to show the app so we can make the window visible.
+        // Alternatively, you could toggle the visibility in Startup.
+        // It will work, but it will have one white frame before it starts rendering
+        window.single_mut().visible = true;
+    }
 }
 
 fn setup(
