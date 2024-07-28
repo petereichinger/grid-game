@@ -1,6 +1,6 @@
 mod mouse_scroll;
 
-use bevy::{prelude::*};
+use bevy::prelude::*;
 use mouse_scroll::{AccumulatedScrolls, MouseScrollPlugin};
 
 pub struct GameCameraPlugin;
@@ -14,7 +14,7 @@ impl Plugin for GameCameraPlugin {
 }
 
 #[derive(Component)]
-struct MainCamera;
+pub struct MainCamera;
 
 #[derive(Component)]
 struct ZRotator;
