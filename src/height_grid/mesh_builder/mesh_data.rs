@@ -1,4 +1,10 @@
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    render::{
+        mesh::{Indices, PrimitiveTopology},
+        render_asset::RenderAssetUsages,
+    },
+};
 
 #[derive(Clone, Default)]
 pub struct MeshData {
@@ -58,6 +64,19 @@ impl MeshData {
         self.normals.extend(std::iter::repeat(normal).take(4));
         // TODO:: UVs
         self.uvs.extend(std::iter::repeat([0.0, 0.0]).take(4));
+    }
+}
+
+impl From<MeshData> for Mesh {
+    fn from(value: MeshData) -> Self {
+        Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        )
+        .with_inserted_indices(Indices::U32(value.indices))
+        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, value.positions)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, value.normals)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, value.uvs)
     }
 }
 

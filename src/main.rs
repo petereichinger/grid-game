@@ -3,7 +3,7 @@ mod close_on_esc;
 mod height_grid;
 
 use bevy::{
-    color::palettes::css::LIME,
+    color::palettes::css::{GHOST_WHITE, LIME, SEA_GREEN, TAN},
     core::FrameCount,
     pbr::wireframe::{Wireframe, WireframeColor, WireframePlugin},
     prelude::*,
@@ -13,7 +13,10 @@ use bevy::{
     },
 };
 
-use height_grid::HeightGrid;
+use height_grid::{
+    mesh_builder::{self, HeightGridMeshes},
+    HeightGrid,
+};
 
 fn main() {
     App::new()
@@ -73,16 +76,39 @@ fn setup(
             (0, 0, 1, 0).into(),
         ],
     );
-    let mesh = height_grid::mesh_builder::Builder::new(&grid);
+
+    let HeightGridMeshes { ground, cliffs } = mesh_builder::build(&grid);
+
+    let ground_material = materials.add(StandardMaterial {
+        base_color: SEA_GREEN.into(),
+        ..default()
+    });
+    let cliffs_material = materials.add(StandardMaterial {
+        base_color: TAN.into(),
+        ..default()
+    });
     commands.spawn((
         PbrBundle {
-            mesh: meshes.add(mesh),
-            material: materials.add(Color::WHITE),
+            mesh: meshes.add(ground),
+            material: ground_material,
             transform: Transform::IDENTITY,
             ..default()
         },
         Wireframe,
         WireframeColor { color: LIME.into() },
+    ));
+
+    commands.spawn((
+        PbrBundle {
+            mesh: meshes.add(cliffs),
+            material: cliffs_material,
+            transform: Transform::IDENTITY,
+            ..default()
+        },
+        Wireframe,
+        WireframeColor {
+            color: GHOST_WHITE.into(),
+        },
     ));
 
     commands.spawn(PointLightBundle {

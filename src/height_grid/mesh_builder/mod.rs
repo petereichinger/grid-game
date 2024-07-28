@@ -15,65 +15,38 @@ use super::{
     HeightGrid,
 };
 
-pub struct Builder<'a> {
-    pub height_grid: &'a HeightGrid,
+pub struct HeightGridMeshes {
+    pub ground: Mesh,
+    pub cliffs: Mesh,
 }
 
-impl<'a> Builder<'a> {
-    pub fn new(height_grid: &'a HeightGrid) -> Self {
-        Self { height_grid }
-    }
-}
+pub fn build(height_grid: &HeightGrid) -> HeightGridMeshes {
+    let mut ground_mesh_data = MeshData::default();
+    let mut cliffs_mesh_data = MeshData::default();
 
-impl MeshBuilder for Builder<'_> {
-    fn build(&self) -> Mesh {
-        let num_vertices =
-            self.height_grid.cells_count.0 as usize * self.height_grid.cells_count.1 as usize * 4;
-        let num_indices =
-            self.height_grid.cells_count.0 as usize * self.height_grid.cells_count.1 as usize * 6;
-
-        let mut mesh_data = MeshData {
-            positions: Vec::with_capacity(num_vertices),
-            normals: Vec::with_capacity(num_vertices),
-            uvs: Vec::with_capacity(num_vertices),
-            indices: Vec::with_capacity(num_indices),
-        };
-
-        for y in 0..self.height_grid.cells_count.1 {
-            for x in 0..self.height_grid.cells_count.0 {
-                let cell = (x, y);
-                let grid = self.height_grid;
-                let mesh_type = get_cell_type(grid, cell);
-                {
-                    match mesh_type {
-                        CellMeshType::Shared => create_flat_cell(grid, &mut mesh_data, cell),
-                        CellMeshType::Slash => create_split_cell(grid, &mut mesh_data, cell, true),
-                        CellMeshType::Backslash => {
-                            create_split_cell(grid, &mut mesh_data, cell, false)
-                        }
-                    };
-                }
-                {
-                    create_cliffs(grid, &mut mesh_data, cell);
-                }
+    for y in 0..height_grid.cells_count.1 {
+        for x in 0..height_grid.cells_count.0 {
+            let cell = (x, y);
+            let grid = height_grid;
+            let mesh_type = get_cell_type(grid, cell);
+            {
+                match mesh_type {
+                    CellMeshType::Shared => create_flat_cell(grid, &mut ground_mesh_data, cell),
+                    CellMeshType::Slash => {
+                        create_split_cell(grid, &mut ground_mesh_data, cell, true)
+                    }
+                    CellMeshType::Backslash => {
+                        create_split_cell(grid, &mut ground_mesh_data, cell, false)
+                    }
+                };
             }
+            create_cliffs(grid, &mut cliffs_mesh_data, cell);
         }
+    }
 
-        let MeshData {
-            positions,
-            normals,
-            uvs,
-            indices,
-        } = mesh_data;
-
-        Mesh::new(
-            PrimitiveTopology::TriangleList,
-            RenderAssetUsages::default(),
-        )
-        .with_inserted_indices(Indices::U32(indices))
-        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
+    HeightGridMeshes {
+        ground: ground_mesh_data.into(),
+        cliffs: cliffs_mesh_data.into(),
     }
 }
 
