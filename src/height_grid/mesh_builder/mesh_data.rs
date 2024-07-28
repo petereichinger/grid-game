@@ -48,7 +48,7 @@ impl MeshData {
 
         self.positions.extend(vertices);
 
-        self.indices.push(index_offset + 0);
+        self.indices.push(index_offset);
         self.indices.push(index_offset + 2);
         self.indices.push(index_offset + 1);
 

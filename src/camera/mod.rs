@@ -1,6 +1,6 @@
 mod mouse_scroll;
 
-use bevy::{color::palettes::css::*, prelude::*};
+use bevy::{prelude::*};
 use mouse_scroll::{AccumulatedScrolls, MouseScrollPlugin};
 
 pub struct GameCameraPlugin;

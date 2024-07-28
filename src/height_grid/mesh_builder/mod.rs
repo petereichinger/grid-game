@@ -2,10 +2,6 @@ mod mesh_data;
 
 use bevy::{
     prelude::*,
-    render::{
-        mesh::{Indices, PrimitiveTopology},
-        render_asset::RenderAssetUsages,
-    },
 };
 use mesh_data::MeshData;
 
@@ -135,10 +131,10 @@ fn create_cliff(
             let ol_pos = grid.get_position(opp_coord, opp_corner_l);
             let or_pos = grid.get_position(opp_coord, opp_corner_r);
             if left_opposite_height < left_height {
-                mesh_data.create_triangle(&[l_pos, ol_pos, or_pos].into());
+                mesh_data.create_triangle(&[l_pos, ol_pos, or_pos]);
             }
             if right_opposite_height < right_height {
-                mesh_data.create_triangle(&[l_pos, or_pos, r_pos].into());
+                mesh_data.create_triangle(&[l_pos, or_pos, r_pos]);
             }
         }
     }
