@@ -59,12 +59,13 @@ fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
 
 fn setup(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let grid = HeightGrid::new(
         (3, 3),
-        vec![
+        [
             (0, 0, 0, 0).into(),
             (0, 0, 0, 0).into(),
             (0, 0, 0, 0).into(),
@@ -78,15 +79,18 @@ fn setup(
     );
 
     let HeightGridMeshes { ground, cliffs } = mesh_builder::build(&grid);
-
+    let ground_texture = asset_server.load("textures/grass.png");
+    let cliffs_texture = asset_server.load("textures/dirt.png");
     let ground_material = materials.add(StandardMaterial {
-        base_color: SEA_GREEN.into(),
+        base_color_texture: Some(ground_texture.clone()),
         ..default()
     });
+
     let cliffs_material = materials.add(StandardMaterial {
-        base_color: TAN.into(),
+        base_color_texture: Some(cliffs_texture.clone()),
         ..default()
     });
+
     commands.spawn((
         PbrBundle {
             mesh: meshes.add(ground),

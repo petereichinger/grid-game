@@ -1,8 +1,6 @@
 mod mesh_data;
 
-use bevy::{
-    prelude::*,
-};
+use bevy::prelude::*;
 use mesh_data::MeshData;
 
 use super::{
@@ -83,11 +81,11 @@ fn create_split_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: C
     let bl = height_grid.get_position(cell, Corner::BottomLeft);
     let br = height_grid.get_position(cell, Corner::BottomRight);
     if slash {
-        mesh_data.create_triangle(&[tl, bl, tr]);
-        mesh_data.create_triangle(&[tr, bl, br]);
+        mesh_data.create_triangle(&[tl, bl, tr], &[[0.0, 1.0], [0.0, 0.0], [1.0, 1.0]]);
+        mesh_data.create_triangle(&[tr, bl, br], &[[1.0, 1.0], [0.0, 0.0], [1.0, 0.0]]);
     } else {
-        mesh_data.create_triangle(&[tl, bl, br]);
-        mesh_data.create_triangle(&[tl, br, tr]);
+        mesh_data.create_triangle(&[tl, bl, br], &[[0.0, 1.0], [0.0, 0.0], [1.0, 0.0]]);
+        mesh_data.create_triangle(&[tl, br, tr], &[[0.0, 1.0], [1.0, 0.0], [1.0, 1.0]]);
     };
 }
 fn create_flat_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord) {
@@ -95,7 +93,10 @@ fn create_flat_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: Co
     let tr = height_grid.get_position(cell, Corner::TopRight);
     let bl = height_grid.get_position(cell, Corner::BottomLeft);
     let br = height_grid.get_position(cell, Corner::BottomRight);
-    mesh_data.create_quad(&[tl, tr, bl, br]);
+    mesh_data.create_quad(
+        &[tl, tr, bl, br],
+        &[[0.0, 1.0], [1.0, 1.0], [0.0, 0.0], [1.0, 0.0]],
+    );
 }
 
 fn create_cliffs(grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord) {
@@ -131,10 +132,24 @@ fn create_cliff(
             let ol_pos = grid.get_position(opp_coord, opp_corner_l);
             let or_pos = grid.get_position(opp_coord, opp_corner_r);
             if left_opposite_height < left_height {
-                mesh_data.create_triangle(&[l_pos, ol_pos, or_pos]);
+                mesh_data.create_triangle(
+                    &[l_pos, ol_pos, or_pos],
+                    &[
+                        [0.0, left_height as f32],
+                        [0.0, left_opposite_height as f32],
+                        [1.0, right_opposite_height as f32],
+                    ],
+                );
             }
             if right_opposite_height < right_height {
-                mesh_data.create_triangle(&[l_pos, or_pos, r_pos]);
+                mesh_data.create_triangle(
+                    &[l_pos, or_pos, r_pos],
+                    &[
+                        [0.0, left_height as f32],
+                        [1.0, right_height as f32],
+                        [1.0, right_opposite_height as f32],
+                    ],
+                );
             }
         }
     }
