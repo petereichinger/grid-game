@@ -1,4 +1,4 @@
-use avian3d::spatial_query::{SpatialQuery, SpatialQueryFilter};
+use avian3d::spatial_query::{RayHitData, SpatialQuery, SpatialQueryFilter};
 use bevy::{color::palettes::css::WHITE, prelude::*};
 
 use crate::{camera::MainCamera, Terrain};
@@ -19,17 +19,17 @@ impl Plugin for GameInputPlugin {
             .add_systems(Update, terrain_gizmo);
     }
 }
-#[derive(Resource, Default)]
+#[derive(Debug, Resource, Default)]
 pub struct CurrentMousePos {
     pub position: Vec2,
 }
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct HitPoint {
-    position: Vec3,
-    normal: Vec3,
+    pub position: Vec3,
+    pub normal: Vec3,
 }
-#[derive(Resource, Default)]
+#[derive(Debug, Resource, Default)]
 pub struct TerrainRaycast {
     pub hit_point: Option<HitPoint>,
 }
@@ -57,23 +57,26 @@ fn raycast(
         .viewport_to_world(t, mouse_position.position)
         .unwrap_or(Ray3d::new(t.translation(), *t.forward()));
 
-    if let Some(ray_hit_data) = spatial_query.cast_ray_predicate(
-        origin,
-        direction,
-        f32::MAX,
-        true,
-        SpatialQueryFilter::default(),
-        &|entity| terrain.get(entity).is_ok(),
-    ) {
-        let impact = origin + ray_hit_data.time_of_impact * direction;
+    terrain_raycast.hit_point = spatial_query
+        .cast_ray_predicate(
+            origin,
+            direction,
+            f32::MAX,
+            true,
+            SpatialQueryFilter::default(),
+            &|entity| terrain.get(entity).is_ok(),
+        )
+        .map(
+            |RayHitData {
+                 time_of_impact,
+                 normal,
+                 ..
+             }| {
+                let position = origin + time_of_impact * direction;
 
-        terrain_raycast.hit_point = Some(HitPoint {
-            position: impact,
-            normal: ray_hit_data.normal,
-        });
-    } else {
-        terrain_raycast.hit_point = None;
-    }
+                HitPoint { position, normal }
+            },
+        );
 }
 
 fn terrain_gizmo(mut gizmos: Gizmos, terrain_raycast: Res<TerrainRaycast>) {

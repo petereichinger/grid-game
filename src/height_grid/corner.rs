@@ -1,5 +1,6 @@
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub enum Corner {
+    #[default]
     TopLeft,
     TopRight,
     BottomLeft,

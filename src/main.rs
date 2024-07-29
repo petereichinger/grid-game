@@ -2,6 +2,7 @@ mod camera;
 mod close_on_esc;
 mod height_grid;
 mod input;
+mod terrain_editor;
 
 use avian3d::prelude::*;
 use bevy::{
@@ -48,6 +49,7 @@ fn main() {
             camera::GameCameraPlugin,
             PhysicsPlugins::default(),
             input::GameInputPlugin,
+            terrain_editor::TerrainEditorPlugin,
         ))
         .add_systems(Startup, setup)
         .add_systems(Update, (close_on_esc::close_on_esc, make_visible))
