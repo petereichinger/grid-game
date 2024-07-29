@@ -3,11 +3,49 @@ mod mesh_data;
 use bevy::prelude::*;
 use mesh_data::MeshData;
 
+use crate::{Cliffs, Ground};
+
 use super::{
     cell::{Coord, FlipCorner},
     corner::Corner,
     HeightGrid,
 };
+
+#[derive(Component, Debug)]
+pub struct RequiresMeshing;
+
+pub struct MeshBuilderPlugin;
+
+impl Plugin for MeshBuilderPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, generate_meshes);
+    }
+}
+
+fn generate_meshes(
+    mut commands: Commands,
+    requires_meshing_q: Query<(Entity, &HeightGrid, &Children), With<RequiresMeshing>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut cliffs_q: Query<&mut Handle<Mesh>, (With<Cliffs>, Without<Ground>)>,
+    mut ground_q: Query<&mut Handle<Mesh>, (With<Ground>, Without<Cliffs>)>,
+) {
+    for (entity, height_grid, children) in requires_meshing_q.iter() {
+        info!("Remeshing");
+        let HeightGridMeshes { ground, cliffs } = build(height_grid);
+
+        let cliffs = meshes.add(cliffs);
+        let ground = meshes.add(ground);
+        for child in children {
+            if let Ok(mut cliffs_handle) = cliffs_q.get_mut(*child) {
+                *cliffs_handle = cliffs.clone();
+            }
+            if let Ok(mut ground_handle) = ground_q.get_mut(*child) {
+                *ground_handle = ground.clone();
+            }
+        }
+        commands.entity(entity).remove::<RequiresMeshing>();
+    }
+}
 
 pub struct HeightGridMeshes {
     pub ground: Mesh,
@@ -101,7 +139,7 @@ fn create_flat_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: Co
 
 fn create_cliffs(grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord) {
     use super::cell::FlipAxis::*;
-    use super::Corner::*;
+    use super::corner::Corner::*;
     create_cliff(grid, mesh_data, cell, (BottomLeft, BottomRight), Horizontal);
     create_cliff(grid, mesh_data, cell, (BottomRight, TopRight), Vertical);
     create_cliff(grid, mesh_data, cell, (TopRight, TopLeft), Horizontal);

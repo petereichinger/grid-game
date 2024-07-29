@@ -9,23 +9,21 @@ pub struct TerrainEditorPlugin;
 
 impl Plugin for TerrainEditorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (init_edit, edit, finish_edit).chain());
+        app.insert_resource(TerrainEditConfig { strength: 1 })
+            .add_systems(Update, init_edit);
     }
 }
 
 #[derive(Resource, Debug, Default)]
-struct TerrainEdit {
-    coord: Coord,
-    corner: Corner,
+struct TerrainEditConfig {
+    strength: i32,
 }
 fn init_edit(
     mut commands: Commands,
     terrain_hit_point: Res<TerrainRaycast>,
     mouse_button: Res<ButtonInput<MouseButton>>,
 ) {
-    let left_down = mouse_button.just_pressed(MouseButton::Left);
-
-    if !left_down {
+    if !mouse_button.just_pressed(MouseButton::Left) {
         return;
     }
 
@@ -42,16 +40,14 @@ fn init_edit(
             Vec2 { y: fy, .. } if fy < ry => ((x, y - 1), Corner::TopLeft),
             _ => ((x, y), Corner::BottomLeft),
         };
-
-        commands.insert_resource(TerrainEdit { coord, corner })
     }
 }
 
-fn edit(terrain_edit: Option<Res<TerrainEdit>>) {
-    if let Some(res) = terrain_edit {
-        info!("{:?} {:?}", res.coord, res.corner);
-    }
-}
-fn finish_edit(mut commands: Commands) {
-    commands.remove_resource::<TerrainEdit>();
-}
+// fn edit(terrain_edit: Option<Res<TerrainEdit>>) {
+//     if let Some(res) = terrain_edit {
+//         info!("{:?} {:?}", res.coord, res.corner);
+//     }
+// }
+// fn finish_edit(mut commands: Commands) {
+//     commands.remove_resource::<TerrainEdit>();
+// }

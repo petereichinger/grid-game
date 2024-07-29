@@ -17,12 +17,18 @@ use bevy::{
 };
 
 use height_grid::{
-    mesh_builder::{self, HeightGridMeshes},
+    mesh_builder::{self, HeightGridMeshes, RequiresMeshing},
     HeightGrid,
 };
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Terrain;
+
+#[derive(Component, Debug)]
+pub struct Ground;
+
+#[derive(Component, Debug)]
+pub struct Cliffs;
 
 fn main() {
     App::new()
@@ -49,6 +55,7 @@ fn main() {
             camera::GameCameraPlugin,
             PhysicsPlugins::default(),
             input::GameInputPlugin,
+            height_grid::HeightGridPlugin,
             terrain_editor::TerrainEditorPlugin,
         ))
         .add_systems(Startup, setup)
@@ -72,22 +79,7 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let grid = HeightGrid::new(
-        (3, 3),
-        [
-            (0, 0, 0, 0).into(),
-            (0, 0, 0, 0).into(),
-            (0, 0, 0, 0).into(),
-            (0, 1, 0, 1).into(),
-            (1, 1, 1, 1).into(),
-            (1, 0, 1, 0).into(),
-            (0, 0, 0, 1).into(),
-            (0, 0, 1, 1).into(),
-            (0, 0, 1, 0).into(),
-        ],
-    );
-
-    let HeightGridMeshes { ground, cliffs } = mesh_builder::build(&grid);
+    // let HeightGridMeshes { ground, cliffs } = mesh_builder::build(&grid);
     let ground_texture = asset_server.load("textures/grass.png");
     let cliffs_texture = asset_server.load("textures/dirt.png");
     let ground_material = materials.add(StandardMaterial {
@@ -100,35 +92,62 @@ fn setup(
         ..default()
     });
 
-    commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(ground),
-            material: ground_material,
-            transform: Transform::IDENTITY,
-            ..default()
-        },
-        Terrain,
-        Wireframe,
-        WireframeColor { color: LIME.into() },
-        ColliderConstructor::TrimeshFromMesh,
-        RigidBody::Static,
+    let ground_id = commands
+        .spawn((
+            PbrBundle {
+                // mesh: meshes.add(ground),
+                material: ground_material,
+                transform: Transform::IDENTITY,
+                ..default()
+            },
+            Terrain,
+            Ground,
+            Wireframe,
+            WireframeColor { color: LIME.into() },
+            ColliderConstructor::TrimeshFromMesh,
+            RigidBody::Static,
+        ))
+        .id();
+
+    let cliffs_id = commands
+        .spawn((
+            PbrBundle {
+                // mesh: meshes.add(cliffs),
+                material: cliffs_material,
+                transform: Transform::IDENTITY,
+                ..default()
+            },
+            Terrain,
+            Cliffs,
+            Wireframe,
+            WireframeColor {
+                color: GHOST_WHITE.into(),
+            },
+            ColliderConstructor::TrimeshFromMesh,
+            RigidBody::Static,
+        ))
+        .id();
+
+    let mut height_grid = commands.spawn((
+        RequiresMeshing,
+        SpatialBundle::default(),
+        HeightGrid::new(
+            (3, 3),
+            [
+                (0, 0, 0, 0).into(),
+                (0, 0, 0, 0).into(),
+                (0, 0, 0, 0).into(),
+                (0, 1, 0, 1).into(),
+                (1, 1, 1, 1).into(),
+                (1, 0, 1, 0).into(),
+                (0, 0, 0, 1).into(),
+                (0, 0, 1, 1).into(),
+                (0, 0, 1, 0).into(),
+            ],
+        ),
     ));
 
-    commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(cliffs),
-            material: cliffs_material,
-            transform: Transform::IDENTITY,
-            ..default()
-        },
-        Terrain,
-        Wireframe,
-        WireframeColor {
-            color: GHOST_WHITE.into(),
-        },
-        ColliderConstructor::TrimeshFromMesh,
-        RigidBody::Static,
-    ));
+    height_grid.push_children(&[ground_id, cliffs_id]);
 
     commands.spawn(PointLightBundle {
         point_light: PointLight {
