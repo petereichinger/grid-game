@@ -5,9 +5,8 @@ mod input;
 
 use avian3d::prelude::*;
 use bevy::{
-    color::palettes::css::{GHOST_WHITE, LIME, WHITE},
+    color::palettes::css::{GHOST_WHITE, LIME},
     core::FrameCount,
-    input::mouse::MouseMotion,
     pbr::wireframe::{Wireframe, WireframeColor, WireframePlugin},
     prelude::*,
     render::{
@@ -16,15 +15,13 @@ use bevy::{
     },
 };
 
-use camera::MainCamera;
 use height_grid::{
     mesh_builder::{self, HeightGridMeshes},
     HeightGrid,
 };
-use input::CurrentMousePos;
 
 #[derive(Component)]
-struct Terrain;
+pub struct Terrain;
 
 fn main() {
     App::new()
@@ -54,7 +51,6 @@ fn main() {
         ))
         .add_systems(Startup, setup)
         .add_systems(Update, (close_on_esc::close_on_esc, make_visible))
-        .add_systems(Update, raycast)
         .run();
 }
 
@@ -65,38 +61,6 @@ fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
         // Alternatively, you could toggle the visibility in Startup.
         // It will work, but it will have one white frame before it starts rendering
         window.single_mut().visible = true;
-    }
-}
-
-fn raycast(
-    spatial_query: SpatialQuery,
-    mut gizmos: Gizmos,
-    terrain: Query<(&Terrain)>,
-    main_camera: Query<(&GlobalTransform, &Camera), With<MainCamera>>,
-    mouse_position: Res<CurrentMousePos>,
-) {
-    let (t, camera) = main_camera
-        .get_single()
-        .expect("only one main camera allowed");
-    // mouse_motion_events.Some
-    // camera.ndc_to_world(t, )
-    // let origin = t.translation();
-    let ray = camera
-        .viewport_to_world(t, mouse_position.position)
-        .unwrap_or(Ray3d::new(t.translation(), *t.forward()));
-    // let direction = t.forward();
-
-    if let Some(ray_hit_data) = spatial_query.cast_ray_predicate(
-        ray.origin,
-        ray.direction,
-        f32::MAX,
-        true,
-        SpatialQueryFilter::default(),
-        &|entity| terrain.get(entity).is_ok(),
-    ) {
-        let impact = ray.origin + ray_hit_data.time_of_impact * ray.direction;
-        gizmos.sphere(impact, Quat::IDENTITY, 0.25, WHITE);
-        // info!("{:?}", ray_hit_data);
     }
 }
 
