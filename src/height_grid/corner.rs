@@ -7,6 +7,13 @@ pub enum Corner {
     BottomRight,
 }
 
+pub const CORNERS: [Corner; 4] = [
+    Corner::TopLeft,
+    Corner::TopRight,
+    Corner::BottomRight,
+    Corner::BottomLeft,
+];
+
 impl Corner {
     pub fn get_corner_offset(&self) -> (f32, f32) {
         match self {
