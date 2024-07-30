@@ -16,6 +16,8 @@ use bevy::{
     },
 };
 
+use bevy_egui::EguiPlugin;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use height_grid::{
     mesh_builder::{self, HeightGridMeshes, RequiresMeshing},
     HeightGrid,
@@ -57,6 +59,8 @@ fn main() {
             input::GameInputPlugin,
             height_grid::HeightGridPlugin,
             terrain_editor::TerrainEditorPlugin,
+            EguiPlugin,
+            WorldInspectorPlugin::new(),
         ))
         .add_systems(Startup, setup)
         .add_systems(Update, (close_on_esc::close_on_esc, make_visible))
@@ -76,10 +80,8 @@ fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // let HeightGridMeshes { ground, cliffs } = mesh_builder::build(&grid);
     let ground_texture = asset_server.load("textures/grass.png");
     let cliffs_texture = asset_server.load("textures/dirt.png");
     let ground_material = materials.add(StandardMaterial {
@@ -95,7 +97,6 @@ fn setup(
     let ground_id = commands
         .spawn((
             PbrBundle {
-                // mesh: meshes.add(ground),
                 material: ground_material,
                 transform: Transform::IDENTITY,
                 ..default()
@@ -106,13 +107,13 @@ fn setup(
             WireframeColor { color: LIME.into() },
             ColliderConstructor::TrimeshFromMesh,
             RigidBody::Static,
+            Name::new("Ground"),
         ))
         .id();
 
     let cliffs_id = commands
         .spawn((
             PbrBundle {
-                // mesh: meshes.add(cliffs),
                 material: cliffs_material,
                 transform: Transform::IDENTITY,
                 ..default()
@@ -125,6 +126,7 @@ fn setup(
             },
             ColliderConstructor::TrimeshFromMesh,
             RigidBody::Static,
+            Name::new("Cliffs"),
         ))
         .id();
 
@@ -145,6 +147,7 @@ fn setup(
                 (0, 0, 1, 0).into(),
             ],
         ),
+        Name::new("Height Grid"),
     ));
 
     height_grid.push_children(&[ground_id, cliffs_id]);

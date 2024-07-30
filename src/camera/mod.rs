@@ -30,6 +30,7 @@ fn setup(mut commands: Commands) {
                 ..default()
             },
             MainCamera,
+            Name::new("Main Camera"),
         ))
         .id();
     let x_rotator = commands
@@ -41,11 +42,12 @@ fn setup(mut commands: Commands) {
                 ..default()
             },
             XRotator,
+            Name::new("X Rotator"),
         ))
         .add_child(camera)
         .id();
     commands
-        .spawn((SpatialBundle::default(), ZRotator))
+        .spawn((SpatialBundle::default(), ZRotator, Name::new("Camera Root")))
         .add_child(x_rotator);
 }
 

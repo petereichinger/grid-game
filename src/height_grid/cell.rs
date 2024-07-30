@@ -14,6 +14,16 @@ impl From<(u32, u32, u32, u32)> for Cell {
 }
 
 impl Cell {
+    pub fn set_height(&mut self, corner: Corner, height: u32) {
+        let corner = match corner {
+            Corner::TopLeft => &mut self.heights.0,
+            Corner::TopRight => &mut self.heights.1,
+            Corner::BottomLeft => &mut self.heights.2,
+            Corner::BottomRight => &mut self.heights.3,
+        };
+
+        *corner = height;
+    }
     pub fn get_height(&self, corner: Corner) -> u32 {
         match corner {
             Corner::TopLeft => self.heights.0,

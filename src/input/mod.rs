@@ -24,10 +24,11 @@ pub struct CurrentMousePos {
     pub position: Vec2,
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct HitPoint {
     pub position: Vec3,
     pub normal: Vec3,
+    pub entity: Entity,
 }
 #[derive(Debug, Resource, Default)]
 pub struct TerrainRaycast {
@@ -45,7 +46,7 @@ fn update_current_mouse_pos(
 
 fn raycast(
     spatial_query: SpatialQuery,
-    terrain: Query<&Terrain>,
+    terrain: Query<(&Parent, &Terrain)>,
     main_camera: Query<(&GlobalTransform, &Camera), With<MainCamera>>,
     mouse_position: Res<CurrentMousePos>,
     mut terrain_raycast: ResMut<TerrainRaycast>,
@@ -70,17 +71,28 @@ fn raycast(
             |RayHitData {
                  time_of_impact,
                  normal,
-                 ..
+                 entity,
              }| {
                 let position = origin + time_of_impact * direction;
 
-                HitPoint { position, normal }
+                let (ref parent, _) = terrain
+                    .get(entity)
+                    .expect(format!("terrain {} does not have parent", entity).as_str());
+
+                HitPoint {
+                    position,
+                    normal,
+                    entity: ***parent,
+                }
             },
         );
 }
 
 fn terrain_gizmo(mut gizmos: Gizmos, terrain_raycast: Res<TerrainRaycast>) {
-    if let Some(HitPoint { position, normal }) = terrain_raycast.hit_point {
+    if let Some(HitPoint {
+        position, normal, ..
+    }) = terrain_raycast.hit_point
+    {
         gizmos.arrow(position, position + normal, WHITE);
     }
 }

@@ -55,6 +55,11 @@ impl HeightGrid {
         self.cells.get(cell_index).expect("index out of bounds")
     }
 
+    pub fn get_cell_mut(&mut self, coord: Coord) -> &mut Cell {
+        let cell_index = self.get_cell_index(coord);
+
+        self.cells.get_mut(cell_index).expect("index out of bounds")
+    }
     pub fn get_position(&self, coord: Coord, corner: Corner) -> Vec3 {
         let cell_data = self.get_cell(coord);
         let height = cell_data.get_height(corner);
