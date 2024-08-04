@@ -35,6 +35,16 @@ impl CellRect {
     }
 }
 
+impl IntoIterator for CellRect {
+    type Item = UVec2;
+
+    type IntoIter = CellRectIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.into()
+    }
+}
+
 pub struct CellRectIter {
     rect: CellRect,
     current: u32,
@@ -76,9 +86,16 @@ impl Iterator for CellRectIter {
     }
 }
 
+pub fn inside_circle(origin: impl Into<UVec2>, radius: u32) -> impl Fn(UVec2) -> bool {
+    let origin = origin.into().as_ivec2();
+    let radius = radius * radius;
+    move |pos| (pos.as_ivec2() - origin).length_squared() <= radius as i32
+}
 
 #[cfg(test)]
 mod tests {
+    use crate::height_grid::cell_iter::inside_circle;
+
     use super::{CellRect, CellRectIter};
 
     #[test]
@@ -166,5 +183,21 @@ mod tests {
                 (2, 1).into()
             ]
         );
+    }
+
+    #[test]
+    fn inside_circle_works() {
+        assert!(inside_circle((5, 5), 1)((5, 5).into()));
+        assert!(inside_circle((5, 5), 1)((6, 5).into()));
+        assert!(inside_circle((5, 5), 1)((5, 6).into()));
+        assert!(inside_circle((5, 5), 1)((4, 5).into()));
+        assert!(inside_circle((5, 5), 1)((5, 4).into()));
+    }
+    #[test]
+    fn not_inside_circle_works() {
+        assert!(!inside_circle((5, 5), 1)((6, 6).into()));
+        assert!(!inside_circle((5, 5), 1)((4, 4).into()));
+        assert!(!inside_circle((5, 5), 1)((4, 6).into()));
+        assert!(!inside_circle((5, 5), 1)((6, 4).into()));
     }
 }

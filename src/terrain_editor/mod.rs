@@ -3,6 +3,7 @@ use bevy_egui::EguiContexts;
 
 use crate::{
     height_grid::{
+        cell_iter::CellRect,
         corner::{Corner, CORNERS},
         flip::{FlipAxis, FlipCorner},
         mesh_builder::RequiresMeshing,
@@ -17,7 +18,7 @@ impl Plugin for TerrainEditorPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(EditConfig {
             strength: 1,
-            range: 1,
+            range: 0,
             ..default()
         })
         .add_systems(Update, (edit, config_ui));
@@ -47,6 +48,10 @@ fn config_ui(mut contexts: EguiContexts, mut edit_config: ResMut<EditConfig>) {
             ui.add(egui::DragValue::new(&mut edit_config.strength).speed(1.0));
         });
 
+        ui.horizontal(|ui| {
+            ui.label("Range");
+            ui.add(egui::DragValue::new(&mut edit_config.range).speed(1.0));
+        });
         ui.label("Mode");
 
         ui.radio_value(&mut edit_config.mode, EditMode::Corner, "Corner");
@@ -103,28 +108,36 @@ fn modify_terrain(
     corner: Corner,
     EditConfig {
         strength,
-        range: i32,
+        range,
         mode,
     }: &EditConfig,
     inverse: bool,
 ) {
     let delta = if inverse { -strength } else { *strength };
-    match mode {
-        EditMode::Corner => modify_corner(height_grid, Some((coord, corner)), delta),
-        EditMode::Vertex => {
-            modify_corner(height_grid, Some((coord, corner)), delta);
-            modify_corner(
-                height_grid,
-                (coord, corner).flip(FlipAxis::Horizontal),
-                delta,
-            );
-            modify_corner(height_grid, (coord, corner).flip(FlipAxis::Vertical), delta);
-            modify_corner(height_grid, (coord, corner).flip(FlipAxis::Diagonal), delta);
-        }
 
-        EditMode::Cell => {
-            for corner in CORNERS {
+    let range = match mode {
+        EditMode::Corner => 0,
+        _ => *range as u32,
+    };
+    let cells = CellRect::from_center(coord, UVec2::splat(range));
+    for coord in cells.into_iter() {
+        match mode {
+            EditMode::Corner => modify_corner(height_grid, Some((coord, corner)), delta),
+            EditMode::Vertex => {
                 modify_corner(height_grid, Some((coord, corner)), delta);
+                modify_corner(
+                    height_grid,
+                    (coord, corner).flip(FlipAxis::Horizontal),
+                    delta,
+                );
+                modify_corner(height_grid, (coord, corner).flip(FlipAxis::Vertical), delta);
+                modify_corner(height_grid, (coord, corner).flip(FlipAxis::Diagonal), delta);
+            }
+
+            EditMode::Cell => {
+                for corner in CORNERS {
+                    modify_corner(height_grid, Some((coord, corner)), delta);
+                }
             }
         }
     }
