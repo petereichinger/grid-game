@@ -117,7 +117,6 @@ fn setup(
 
     let mut height_grid = commands.spawn((
         RequiresMeshing,
-        ColliderConstructorHierarchy::new(Some(ColliderConstructor::TrimeshFromMesh)),
         SpatialBundle::default(),
         HeightGrid::new(
             (3, 3),

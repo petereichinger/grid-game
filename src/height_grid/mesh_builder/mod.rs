@@ -6,11 +6,9 @@ use mesh_data::MeshData;
 
 use crate::{Cliffs, Ground};
 
-use super::{
-    cell::{Coord, FlipCorner},
-    corner::Corner,
-    HeightGrid,
-};
+use super::coord::Coord;
+use super::flip::*;
+use super::{corner::Corner, HeightGrid};
 
 #[derive(Component, Debug)]
 pub struct RequiresMeshing;
@@ -145,8 +143,8 @@ fn create_flat_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: Co
 }
 
 fn create_cliffs(grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord) {
-    use super::cell::FlipAxis::*;
     use super::corner::Corner::*;
+    use super::flip::FlipAxis::*;
     create_cliff(grid, mesh_data, cell, (BottomLeft, BottomRight), Horizontal);
     create_cliff(grid, mesh_data, cell, (BottomRight, TopRight), Vertical);
     create_cliff(grid, mesh_data, cell, (TopRight, TopLeft), Horizontal);
@@ -158,7 +156,7 @@ fn create_cliff(
     mesh_data: &mut MeshData,
     cell: (u32, u32),
     (left, right): (Corner, Corner),
-    axis: super::cell::FlipAxis,
+    axis: FlipAxis,
 ) {
     let left_height = grid.get_cell(cell).get_height(left);
     let right_height = grid.get_cell(cell).get_height(right);

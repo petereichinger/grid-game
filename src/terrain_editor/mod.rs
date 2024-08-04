@@ -1,12 +1,11 @@
-use std::default;
-
-use bevy::{prelude::*, render::extract_resource::ExtractResource};
+use bevy::prelude::*;
 use bevy_egui::EguiContexts;
 
 use crate::{
     height_grid::{
-        cell::{Coord, FlipAxis, FlipCorner},
+        coord::Coord,
         corner::{Corner, CORNERS},
+        flip::{FlipAxis, FlipCorner},
         mesh_builder::RequiresMeshing,
         HeightGrid,
     },
@@ -19,6 +18,7 @@ impl Plugin for TerrainEditorPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(EditConfig {
             strength: 1,
+            range: 1,
             ..default()
         })
         .add_systems(Update, (edit, config_ui));
@@ -36,6 +36,7 @@ enum EditMode {
 #[derive(Resource, Debug, Default)]
 struct EditConfig {
     strength: i32,
+    range: i32,
     mode: EditMode,
 }
 fn config_ui(mut contexts: EguiContexts, mut edit_config: ResMut<EditConfig>) {
@@ -99,46 +100,42 @@ fn modify_terrain(
     height_grid: &mut HeightGrid,
     coord: (u32, u32),
     corner: Corner,
-    EditConfig { strength, mode }: &EditConfig,
+    EditConfig {
+        strength,
+        range: i32,
+        mode,
+    }: &EditConfig,
     inverse: bool,
 ) {
     let delta = if inverse { -strength } else { *strength };
     match mode {
-        EditMode::Corner => modify_corner(height_grid, coord, corner, delta),
+        EditMode::Corner => modify_corner(height_grid, Some((coord, corner)), delta),
         EditMode::Vertex => {
-            modify_corner(height_grid, coord, corner, delta);
-            if let Some((coord, corner)) = (coord, corner).flip(FlipAxis::Horizontal) {
-                modify_corner(height_grid, coord, corner, delta);
-            }
-            if let Some((coord, corner)) = (coord, corner).flip(FlipAxis::Vertical) {
-                modify_corner(height_grid, coord, corner, delta);
-            }
-            if let Some((coord, corner)) = (coord, corner).flip(FlipAxis::Diagonal) {
-                modify_corner(height_grid, coord, corner, delta);
-            }
+            modify_corner(height_grid, Some((coord, corner)), delta);
+            modify_corner(
+                height_grid,
+                (coord, corner).flip(FlipAxis::Horizontal),
+                delta,
+            );
+            modify_corner(height_grid, (coord, corner).flip(FlipAxis::Vertical), delta);
+            modify_corner(height_grid, (coord, corner).flip(FlipAxis::Diagonal), delta);
         }
+
         EditMode::Cell => {
             for corner in CORNERS {
-                modify_corner(height_grid, coord, corner, delta);
+                modify_corner(height_grid, Some((coord, corner)), delta);
             }
         }
     }
 }
 
-fn modify_corner(height_grid: &mut HeightGrid, coord: (u32, u32), corner: Corner, delta: i32) {
-    if !height_grid.valid_coord(coord) {
-        return;
+fn modify_corner(height_grid: &mut HeightGrid, cell_corner: Option<(Coord, Corner)>, delta: i32) {
+    if let Some((coord, corner)) = cell_corner {
+        if !height_grid.valid_coord(coord) {
+            return;
+        }
+        let cell = height_grid.get_cell_mut(coord);
+        let new_height = cell.get_height(corner).saturating_add_signed(delta);
+        cell.set_height(corner, new_height);
     }
-    let cell = height_grid.get_cell_mut(coord);
-    let new_height = cell.get_height(corner).saturating_add_signed(delta);
-    cell.set_height(corner, new_height);
 }
-
-// fn edit(terrain_edit: Option<Res<TerrainEdit>>) {
-//     if let Some(res) = terrain_edit {
-//         info!("{:?} {:?}", res.coord, res.corner);
-//     }
-// }
-// fn finish_edit(mut commands: Commands) {
-//     commands.remove_resource::<TerrainEdit>();
-// }

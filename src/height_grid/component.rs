@@ -1,4 +1,5 @@
-use super::cell::{Cell, Coord};
+use super::cell::Cell;
+use super::coord::Coord;
 use super::corner::Corner;
 use bevy::prelude::*;
 
