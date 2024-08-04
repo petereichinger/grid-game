@@ -76,6 +76,7 @@ impl Iterator for CellRectIter {
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::{CellRect, CellRectIter};
