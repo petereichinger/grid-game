@@ -3,7 +3,6 @@ use bevy_egui::EguiContexts;
 
 use crate::{
     height_grid::{
-        coord::Coord,
         corner::{Corner, CORNERS},
         flip::{FlipAxis, FlipCorner},
         mesh_builder::RequiresMeshing,
@@ -80,10 +79,12 @@ fn edit(
         let UVec2 { x, y } = vec2r.as_uvec2();
 
         let (coord, corner) = match vec2 {
-            Vec2 { x: fx, y: fy } if fx < rx && fy < ry => ((x - 1, y - 1), Corner::TopRight),
-            Vec2 { x: fx, .. } if fx < rx => ((x - 1, y), Corner::BottomRight),
-            Vec2 { y: fy, .. } if fy < ry => ((x, y - 1), Corner::TopLeft),
-            _ => ((x, y), Corner::BottomLeft),
+            Vec2 { x: fx, y: fy } if fx < rx && fy < ry => {
+                (UVec2::new(x - 1, y - 1), Corner::TopRight)
+            }
+            Vec2 { x: fx, .. } if fx < rx => (UVec2::new(x - 1, y), Corner::BottomRight),
+            Vec2 { y: fy, .. } if fy < ry => (UVec2::new(x, y - 1), Corner::TopLeft),
+            _ => (UVec2::new(x, y), Corner::BottomLeft),
         };
 
         let mut height_grid = height_grid_q
@@ -98,7 +99,7 @@ fn edit(
 
 fn modify_terrain(
     height_grid: &mut HeightGrid,
-    coord: (u32, u32),
+    coord: UVec2,
     corner: Corner,
     EditConfig {
         strength,
@@ -129,7 +130,7 @@ fn modify_terrain(
     }
 }
 
-fn modify_corner(height_grid: &mut HeightGrid, cell_corner: Option<(Coord, Corner)>, delta: i32) {
+fn modify_corner(height_grid: &mut HeightGrid, cell_corner: Option<(UVec2, Corner)>, delta: i32) {
     if let Some((coord, corner)) = cell_corner {
         if !height_grid.valid_coord(coord) {
             return;

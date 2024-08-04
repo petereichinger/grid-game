@@ -1,7 +1,6 @@
 pub mod cell;
 pub mod cell_rect;
 mod component;
-pub mod coord;
 pub mod corner;
 pub mod flip;
 pub mod mesh_builder;

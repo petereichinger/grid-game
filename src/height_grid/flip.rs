@@ -1,4 +1,6 @@
-use super::{coord::Coord, corner::Corner};
+use bevy::math::UVec2;
+
+use super::corner::Corner;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum FlipAxis {
@@ -6,13 +8,14 @@ pub enum FlipAxis {
     Vertical,
     Diagonal,
 }
+
 pub trait FlipCorner {
-    fn flip(&self, flip: FlipAxis) -> Option<(Coord, Corner)>;
+    fn flip(&self, flip: FlipAxis) -> Option<(UVec2, Corner)>;
 }
 
-impl FlipCorner for (Coord, Corner) {
-    fn flip(&self, flip: FlipAxis) -> Option<(Coord, Corner)> {
-        let &((x, y), corner) = self;
+impl FlipCorner for (UVec2, Corner) {
+    fn flip(&self, flip: FlipAxis) -> Option<(UVec2, Corner)> {
+        let &(UVec2 { x, y }, corner) = self;
         use Corner::*;
         use FlipAxis::*;
 
@@ -38,7 +41,7 @@ impl FlipCorner for (Coord, Corner) {
         };
 
         match new_corner {
-            ((Some(x), Some(y)), corner) => Some(((x, y), corner)),
+            ((Some(x), Some(y)), corner) => Some((UVec2 { x, y }, corner)),
             _ => None,
         }
     }

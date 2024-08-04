@@ -1,5 +1,4 @@
 use super::cell::Cell;
-use super::coord::Coord;
 use super::corner::Corner;
 use bevy::prelude::*;
 
@@ -15,14 +14,18 @@ use bevy::prelude::*;
 /// 2--3,6--7
 #[derive(Component, Debug)]
 pub struct HeightGrid {
-    pub cells_count: (u32, u32),
+    pub cells_count: UVec2,
     pub cells: Box<[Cell]>,
 }
 
 impl HeightGrid {
-    pub fn new(cells_count: (u32, u32), cells: impl Into<Box<[Cell]>>) -> Self {
+    pub fn new(cells_count: impl Into<UVec2>, cells: impl Into<Box<[Cell]>>) -> Self {
         let cells: Box<[Cell]> = cells.into();
-        let (cells_width, cells_depth) = cells_count;
+        let cells_count = cells_count.into();
+        let UVec2 {
+            x: cells_width,
+            y: cells_depth,
+        } = cells_count;
         assert!(cells_width > 0);
         assert!(cells_depth > 0);
         assert!(!cells.is_empty());
@@ -30,45 +33,51 @@ impl HeightGrid {
         Self { cells_count, cells }
     }
 
-    pub fn valid_coord(&self, coord: Coord) -> bool {
-        coord.0 < self.cells_count.0 && coord.1 < self.cells_count.1
+    pub fn valid_coord(&self, coord: impl Into<UVec2>) -> bool {
+        let coord = coord.into();
+        coord.x < self.cells_count.x && coord.y < self.cells_count.y
     }
 
-    pub fn get_cell_index(&self, cell: Coord) -> usize {
-        let (cells_width, cells_depth) = self.cells_count;
-        let (cell_x, cell_y) = cell;
-        assert!(cell_x < cells_width);
-        assert!(cell_y < cells_depth);
+    pub fn get_cell_index(&self, cell: impl Into<UVec2>) -> usize {
+        let UVec2 {
+            x: cells_width,
+            y: cells_depth,
+        } = self.cells_count;
+        let UVec2 { x, y } = cell.into();
+        assert!(x < cells_width);
+        assert!(y < cells_depth);
 
-        (cells_width * cell_y + cell_x) as usize
+        (cells_width * y + x) as usize
     }
 
-    pub fn try_get_cell(&self, coord: Coord) -> Option<&Cell> {
+    pub fn try_get_cell(&self, coord: impl Into<UVec2>) -> Option<&Cell> {
+        let coord = coord.into();
         if !self.valid_coord(coord) {
             return None;
         }
 
         return Some(self.get_cell(coord));
     }
-    pub fn get_cell(&self, coord: Coord) -> &Cell {
+    pub fn get_cell(&self, coord: impl Into<UVec2>) -> &Cell {
         let cell_index = self.get_cell_index(coord);
 
         self.cells.get(cell_index).expect("index out of bounds")
     }
 
-    pub fn get_cell_mut(&mut self, coord: Coord) -> &mut Cell {
+    pub fn get_cell_mut(&mut self, coord: impl Into<UVec2>) -> &mut Cell {
         let cell_index = self.get_cell_index(coord);
 
         self.cells.get_mut(cell_index).expect("index out of bounds")
     }
-    pub fn get_position(&self, coord: Coord, corner: Corner) -> Vec3 {
+    pub fn get_position(&self, coord: impl Into<UVec2>, corner: Corner) -> Vec3 {
+        let coord = coord.into();
         let cell_data = self.get_cell(coord);
         let height = cell_data.get_height(corner);
 
         let (col_offset, row_offset) = corner.get_corner_offset();
         Vec3::new(
-            coord.0 as f32 + col_offset,
-            coord.1 as f32 + row_offset,
+            coord.x as f32 + col_offset,
+            coord.y as f32 + row_offset,
             height as f32,
         )
     }

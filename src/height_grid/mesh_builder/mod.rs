@@ -6,7 +6,6 @@ use mesh_data::MeshData;
 
 use crate::{Cliffs, Ground};
 
-use super::coord::Coord;
 use super::flip::*;
 use super::{corner::Corner, HeightGrid};
 
@@ -61,9 +60,9 @@ pub fn build(height_grid: &HeightGrid) -> HeightGridMeshes {
     let mut ground_mesh_data = MeshData::default();
     let mut cliffs_mesh_data = MeshData::default();
 
-    for y in 0..height_grid.cells_count.1 {
-        for x in 0..height_grid.cells_count.0 {
-            let cell = (x, y);
+    for y in 0..height_grid.cells_count.y {
+        for x in 0..height_grid.cells_count.x {
+            let cell = UVec2::new(x, y);
             let grid = height_grid;
             let mesh_type = get_cell_type(grid, cell);
             {
@@ -93,7 +92,7 @@ enum CellMeshType {
     Backslash,
 }
 
-fn get_cell_type(height_grid: &HeightGrid, cell: Coord) -> CellMeshType {
+fn get_cell_type(height_grid: &HeightGrid, cell: UVec2) -> CellMeshType {
     let cell = height_grid.get_cell(cell);
 
     let tl = cell.get_height(Corner::TopLeft);
@@ -118,7 +117,7 @@ fn get_cell_type(height_grid: &HeightGrid, cell: Coord) -> CellMeshType {
     }
 }
 
-fn create_split_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord, slash: bool) {
+fn create_split_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: UVec2, slash: bool) {
     let tl = height_grid.get_position(cell, Corner::TopLeft);
     let tr = height_grid.get_position(cell, Corner::TopRight);
     let bl = height_grid.get_position(cell, Corner::BottomLeft);
@@ -131,7 +130,7 @@ fn create_split_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: C
         mesh_data.create_triangle(&[tl, br, tr], &[[0.0, 1.0], [1.0, 0.0], [1.0, 1.0]]);
     };
 }
-fn create_flat_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord) {
+fn create_flat_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: UVec2) {
     let tl = height_grid.get_position(cell, Corner::TopLeft);
     let tr = height_grid.get_position(cell, Corner::TopRight);
     let bl = height_grid.get_position(cell, Corner::BottomLeft);
@@ -142,7 +141,7 @@ fn create_flat_cell(height_grid: &HeightGrid, mesh_data: &mut MeshData, cell: Co
     );
 }
 
-fn create_cliffs(grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord) {
+fn create_cliffs(grid: &HeightGrid, mesh_data: &mut MeshData, cell: UVec2) {
     use super::corner::Corner::*;
     use super::flip::FlipAxis::*;
     create_cliff(grid, mesh_data, cell, (BottomLeft, BottomRight), Horizontal);
@@ -154,7 +153,7 @@ fn create_cliffs(grid: &HeightGrid, mesh_data: &mut MeshData, cell: Coord) {
 fn create_cliff(
     grid: &HeightGrid,
     mesh_data: &mut MeshData,
-    cell: (u32, u32),
+    cell: UVec2,
     (left, right): (Corner, Corner),
     axis: FlipAxis,
 ) {

@@ -1,35 +1,33 @@
-use super::coord::Coord;
+use bevy::prelude::*;
 
 pub struct CellRect {
-    min: Coord,
-    max: Coord,
+    min: UVec2,
+    max: UVec2,
 }
 
 impl CellRect {
-    pub fn new(min: Coord, max: Coord) -> Self {
-        assert!(min.0 <= max.0);
-        assert!(min.1 <= max.1);
+    pub fn new(min: impl Into<UVec2>, max: impl Into<UVec2>) -> Self {
+        let min = min.into();
+        let max = max.into();
+        assert!(min.x <= max.x);
+        assert!(min.y <= max.y);
         Self { min, max }
     }
 
-    pub fn from_center(center: Coord, extents: Coord) -> Self {
-        let bottom_left = (
-            center.0.saturating_sub(extents.0),
-            center.1.saturating_sub(extents.1),
-        );
-        let top_right = (
-            center.0.saturating_add(extents.0 + 1),
-            center.1.saturating_add(extents.1 + 1),
-        );
+    pub fn from_center(center: impl Into<UVec2>, extents: impl Into<UVec2>) -> Self {
+        let center = center.into();
+        let extents = extents.into();
+        let bottom_left = center.saturating_sub(extents);
+        let top_right = center.saturating_add(extents).saturating_add(UVec2::ONE);
         Self::new(bottom_left, top_right)
     }
 
     pub fn width(&self) -> u32 {
-        self.max.0 - self.min.0
+        self.max.x - self.min.x
     }
 
     pub fn height(&self) -> u32 {
-        self.max.1 - self.min.1
+        self.max.y - self.min.y
     }
 
     pub fn num_cells(&self) -> u32 {
@@ -51,7 +49,7 @@ impl From<CellRect> for CellRectIter {
     }
 }
 impl Iterator for CellRectIter {
-    type Item = Coord;
+    type Item = UVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.current;
@@ -60,11 +58,11 @@ impl Iterator for CellRectIter {
             None
         } else {
             let width = self.rect.width();
-            let y = self.rect.min.1 + current / width;
-            let x = self.rect.min.0 + current % width;
+            let y = self.rect.min.y + current / width;
+            let x = self.rect.min.x + current % width;
 
             self.current += 1;
-            Some((x, y))
+            Some((x, y).into())
         }
     }
 
@@ -96,24 +94,18 @@ mod tests {
 
     #[test]
     fn correct_order_works() {
-        let CellRect {
-            min: bottom_left,
-            max: top_right,
-        } = CellRect::new((0, 0), (1, 1));
+        let CellRect { min, max } = CellRect::new((0, 0), (1, 1));
 
-        assert_eq!(bottom_left, (0, 0));
-        assert_eq!(top_right, (1, 1));
+        assert_eq!(min, (0, 0).into());
+        assert_eq!(max, (1, 1).into());
     }
 
     #[test]
     fn from_center_works() {
-        let CellRect {
-            min: bottom_left,
-            max: top_right,
-        } = CellRect::from_center((3, 3), (1, 2));
+        let CellRect { min, max } = CellRect::from_center((3, 3), (1, 2));
 
-        assert_eq!(bottom_left, (2, 1));
-        assert_eq!(top_right, (5, 6));
+        assert_eq!(min, (2, 1).into());
+        assert_eq!(max, (5, 6).into());
     }
 
     #[test]
@@ -123,8 +115,8 @@ mod tests {
             max: top_right,
         } = CellRect::from_center((1, 1), (3, 4));
 
-        assert_eq!(bottom_left, (0, 0));
-        assert_eq!(top_right, (5, 6));
+        assert_eq!(bottom_left, (0, 0).into());
+        assert_eq!(top_right, (5, 6).into());
     }
 
     #[test]
@@ -134,8 +126,8 @@ mod tests {
             max: top_right,
         } = CellRect::from_center((u32::MAX, u32::MAX - 1), (3, 4));
 
-        assert_eq!(bottom_left, (u32::MAX - 3, u32::MAX - 5));
-        assert_eq!(top_right, (u32::MAX, u32::MAX));
+        assert_eq!(bottom_left, (u32::MAX - 3, u32::MAX - 5).into());
+        assert_eq!(top_right, (u32::MAX, u32::MAX).into());
     }
 
     #[test]
@@ -153,7 +145,7 @@ mod tests {
 
         let cells: Vec<_> = iter.collect();
 
-        assert_eq!(cells, vec![(0, 0)]);
+        assert_eq!(cells, vec![(0, 0).into()]);
     }
 
     #[test]
@@ -162,6 +154,16 @@ mod tests {
 
         let cells: Vec<_> = iter.collect();
 
-        assert_eq!(cells, vec![(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (2, 1)]);
+        assert_eq!(
+            cells,
+            vec![
+                (0, 0).into(),
+                (1, 0).into(),
+                (2, 0).into(),
+                (0, 1).into(),
+                (1, 1).into(),
+                (2, 1).into()
+            ]
+        );
     }
 }
