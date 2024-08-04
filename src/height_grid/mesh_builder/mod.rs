@@ -1,5 +1,6 @@
 mod mesh_data;
 
+use avian3d::prelude::{ColliderConstructor, ColliderConstructorHierarchy};
 use bevy::prelude::*;
 use mesh_data::MeshData;
 
@@ -43,7 +44,13 @@ fn generate_meshes(
                 *ground_handle = ground.clone();
             }
         }
-        commands.entity(entity).remove::<RequiresMeshing>();
+        commands
+            .entity(entity)
+            .remove::<RequiresMeshing>()
+            .remove::<ColliderConstructorHierarchy>()
+            .insert(ColliderConstructorHierarchy::new(Some(
+                ColliderConstructor::TrimeshFromMesh,
+            )));
     }
 }
 

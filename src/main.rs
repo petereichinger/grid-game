@@ -18,10 +18,7 @@ use bevy::{
 
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use height_grid::{
-    mesh_builder::{self, HeightGridMeshes, RequiresMeshing},
-    HeightGrid,
-};
+use height_grid::{mesh_builder::RequiresMeshing, HeightGrid};
 
 #[derive(Component, Debug)]
 pub struct Terrain;
@@ -63,18 +60,8 @@ fn main() {
             WorldInspectorPlugin::new(),
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, (close_on_esc::close_on_esc, make_visible))
+        .add_systems(Update, close_on_esc::close_on_esc)
         .run();
-}
-
-fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
-    // The delay may be different for your app or system.
-    if frames.0 == 3 {
-        // At this point the gpu is ready to show the app so we can make the window visible.
-        // Alternatively, you could toggle the visibility in Startup.
-        // It will work, but it will have one white frame before it starts rendering
-        window.single_mut().visible = true;
-    }
 }
 
 fn setup(
@@ -105,7 +92,6 @@ fn setup(
             Ground,
             Wireframe,
             WireframeColor { color: LIME.into() },
-            ColliderConstructor::TrimeshFromMesh,
             RigidBody::Static,
             Name::new("Ground"),
         ))
@@ -124,7 +110,6 @@ fn setup(
             WireframeColor {
                 color: GHOST_WHITE.into(),
             },
-            ColliderConstructor::TrimeshFromMesh,
             RigidBody::Static,
             Name::new("Cliffs"),
         ))
@@ -132,6 +117,7 @@ fn setup(
 
     let mut height_grid = commands.spawn((
         RequiresMeshing,
+        ColliderConstructorHierarchy::new(Some(ColliderConstructor::TrimeshFromMesh)),
         SpatialBundle::default(),
         HeightGrid::new(
             (3, 3),
